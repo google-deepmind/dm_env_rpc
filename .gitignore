@@ -1,0 +1,11 @@
+# Ignore byte-compiled Python code
+*.py[cod]
+
+# Ignore protobuf bindings.
+**/*pb2*.py
+
+# Ignore directories created during the build/installation process
+*.egg-info/
+.eggs/
+build/
+dist/

@@ -1,0 +1,19 @@
+# Source to generate the state_transitions.png diagram using Graphviz.
+
+digraph {
+  node [shape=record];
+  compound=true;
+  "" [shape=diamond]
+  "" -> TERMINATED [label = "JoinWorld        "]
+  subgraph cluster_world_states {
+    rank="same";
+    TERMINATED -> RUNNING [label = "Step", color=grey, dir=both];
+    RUNNING -> INTERRUPTED [label = "Step        ", color=grey, dir=both];
+    RUNNING -> INTERRUPTED [label = "Reset", color=grey];
+    RUNNING -> RUNNING [label = "  Step", color=grey];
+    TERMINATED -> TERMINATED [label = "Reset", color=grey];
+    INTERRUPTED -> INTERRUPTED [label = "Reset", color=grey];
+  }
+
+  TERMINATED -> "" [label = "LeaveWorld", ltail=cluster_world_states];
+}
