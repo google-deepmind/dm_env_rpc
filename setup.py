@@ -91,7 +91,7 @@ setup(
         'googleapis-common-protos',
         'grpcio',
         'numpy',
-        'protobuf',
+        'protobuf>=3.8',
     ],
     tests_require=[
         'absl-py',
@@ -99,6 +99,7 @@ setup(
         'mock',
         'portpicker',
     ],
+    python_requires='>=3.5',
     setup_requires=['grpcio-tools'],
     extras_require={
         'examples': ['pygame', 'portpicker'],
@@ -116,7 +117,6 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: MacOS :: MacOS X',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',

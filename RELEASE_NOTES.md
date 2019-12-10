@@ -1,5 +1,5 @@
 # Release Notes
 
-## [1.0.0b1]
+## [1.0.0]
 
-*   Initial beta release.
+*   Initial release.
