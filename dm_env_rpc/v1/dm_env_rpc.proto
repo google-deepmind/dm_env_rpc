@@ -111,13 +111,20 @@ enum DataType {
 
 message TensorSpec {
   message Value {
+    // For data types that do not have an exact single element proto type match
+    // (such as int8/uint8) the closest proto datatype is used instead
+    // (such as int32/uint32).  Servers should ensure the value is still in the
+    // appropriate range for the real data type.
     oneof value {
       float float = 1;
       double double = 2;
+      int32 int8 = 7;
       int32 int32 = 3;
       int64 int64 = 4;
+      uint32 uint8 = 8;
       uint32 uint32 = 5;
       uint64 uint64 = 6;
+      // The next tag number is 9.
     }
   }
 
