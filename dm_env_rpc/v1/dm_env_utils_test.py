@@ -24,42 +24,6 @@ from dm_env_rpc.v1 import dm_env_utils
 from dm_env_rpc.v1 import spec_manager
 
 
-class NpRangeInfoTests(parameterized.TestCase):
-
-  def test_floating(self):
-    expected_min = np.finfo(np.float32).min
-    actual_min = dm_env_utils._np_range_info(np.float32).min
-    self.assertEqual(expected_min, actual_min)
-
-  def test_integer(self):
-    actual_min = dm_env_utils._np_range_info(np.uint32).min
-    self.assertEqual(0, actual_min)
-
-  def test_string_gives_error(self):
-    with self.assertRaisesRegex(ValueError, 'numpy.str_'):
-      _ = dm_env_utils._np_range_info(np.str_).min
-
-
-class FindExtremeTests(parameterized.TestCase):
-
-  def test_min_from_type(self):
-    tensor_spec = dm_env_rpc_pb2.TensorSpec()
-    tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
-    tensor_spec.shape[:] = [3]
-    tensor_type = np.uint32
-    self.assertEqual(
-        0, dm_env_utils._find_extreme(tensor_spec, tensor_type, 'min'))
-
-  def test_explicit_min(self):
-    tensor_spec = dm_env_rpc_pb2.TensorSpec()
-    tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
-    tensor_spec.shape[:] = [3]
-    tensor_spec.min.uint32 = 1
-    tensor_type = np.uint32
-    self.assertEqual(
-        1, dm_env_utils._find_extreme(tensor_spec, tensor_type, 'min'))
-
-
 class TensorSpecToDmEnvSpecTests(parameterized.TestCase):
 
   def test_no_bounds_gives_arrayspec(self):
@@ -108,7 +72,7 @@ class TensorSpecToDmEnvSpecTests(parameterized.TestCase):
     self.assertEqual(expected, actual)
     self.assertEqual('foo', actual.name)
 
-  def test_bounds_oneof_not_set_gives_error(self):
+  def test_bounds_oneof_not_set_gives_dtype_bounds(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.shape[:] = [3]
@@ -118,8 +82,11 @@ class TensorSpecToDmEnvSpecTests(parameterized.TestCase):
     tensor_spec.min.float = 3
     tensor_spec.min.ClearField('float')
 
-    with self.assertRaisesRegex(ValueError, 'min'):
-      dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
+    actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
+    expected = specs.BoundedArray(
+        shape=[3], dtype=np.uint32, minimum=0, maximum=2**32-1)
+    self.assertEqual(expected, actual)
+    self.assertEqual('foo', actual.name)
 
   def test_bounds_wrong_type_gives_error(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
@@ -127,7 +94,7 @@ class TensorSpecToDmEnvSpecTests(parameterized.TestCase):
     tensor_spec.shape[:] = [3]
     tensor_spec.name = 'foo'
     tensor_spec.min.float = 1.9
-    with self.assertRaisesRegex(ValueError, 'numpy.uint32'):
+    with self.assertRaisesRegex(ValueError, 'uint32'):
       dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
 
   def test_bounds_on_string_gives_error(self):
@@ -137,7 +104,7 @@ class TensorSpecToDmEnvSpecTests(parameterized.TestCase):
     tensor_spec.name = 'named'
     tensor_spec.min.float = 1.9
     tensor_spec.max.float = 10.0
-    with self.assertRaisesRegex(ValueError, 'numpy.str_'):
+    with self.assertRaisesRegex(ValueError, 'string'):
       dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
 
 
