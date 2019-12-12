@@ -21,6 +21,7 @@ from distutils.cmd import Command
 import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
+from setuptools.command.build_ext import build_ext
 from setuptools.command.build_py import build_py
 
 
@@ -69,6 +70,14 @@ class _GenerateProtoFiles(Command):
       raise RuntimeError('ERROR: {}'.format(proto_args))
 
 
+class _BuildExt(build_ext):
+  """Generate protobuf bindings in build_ext stage."""
+
+  def run(self):
+    self.run_command('generate_protos')
+    build_ext.run(self)
+
+
 class _BuildPy(build_py):
   """Generate protobuf bindings in build_py stage."""
 
@@ -105,6 +114,7 @@ setup(
         'examples': ['pygame', 'portpicker'],
     },
     cmdclass={
+        'build_ext': _BuildExt,
         'build_py': _BuildPy,
         'generate_protos': _GenerateProtoFiles,
     },
