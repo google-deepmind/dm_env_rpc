@@ -1,3 +1,4 @@
+# Lint as: python3
 # Copyright 2019 DeepMind Technologies Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +15,16 @@
 # ============================================================================
 """Tests for CatchEnvironment."""
 
-from absl.testing import absltest
 from concurrent import futures
+
+from absl.testing import absltest
 from dm_env import test_utils
 import grpc
 import numpy as np
 import portpicker
 
 import catch_environment
+from dm_env_rpc.v1 import compliance
 from dm_env_rpc.v1 import connection as dm_env_rpc_connection
 from dm_env_rpc.v1 import dm_env_adaptor
 from dm_env_rpc.v1 import dm_env_rpc_pb2
@@ -32,11 +35,9 @@ def _local_address(port):
   return '[::1]:{}'.format(port)
 
 
-class CatchTestBase(absltest.TestCase):
+class ServerConnection(object):
 
-  def setUp(self):
-    super(CatchTestBase, self).setUp()
-
+  def __init__(self):
     port = portpicker.pick_unused_port()
     self._server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=1))
@@ -50,34 +51,69 @@ class CatchTestBase(absltest.TestCase):
         _local_address(port), grpc.local_channel_credentials())
     grpc.channel_ready_future(self._channel).result()
 
-    self._connection = dm_env_rpc_connection.Connection(self._channel)
-    response = self._connection.send(dm_env_rpc_pb2.CreateWorldRequest())
-    self._world_name = response.world_name
+    self.connection = dm_env_rpc_connection.Connection(self._channel)
+    response = self.connection.send(dm_env_rpc_pb2.CreateWorldRequest())
+    self.world_name = response.world_name
 
-  def tearDown(self):
-    self._connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
-    self._connection.send(
-        dm_env_rpc_pb2.DestroyWorldRequest(world_name=self._world_name))
+  def close(self):
+    self.connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
+    self.connection.send(
+        dm_env_rpc_pb2.DestroyWorldRequest(world_name=self.world_name))
     self._server.stop(None)
-    self._connection.close()
+    self.connection.close()
     self._channel.close()
-    super(CatchTestBase, self).tearDown()
 
 
-class CatchDmEnvTest(CatchTestBase, test_utils.EnvironmentTestMixin):
+class CatchDmEnvRpcTest(compliance.StepComplianceTestCase):
+
+  @property
+  def connection(self):
+    return self._server_connection.connection
 
   def setUp(self):
-    super(CatchDmEnvTest, self).setUp()
-    response = dm_env_rpc_pb2.JoinWorldRequest(world_name=self._world_name)
-    specs = self._connection.send(response).specs
+    self._server_connection = ServerConnection()
+
+    self.connection.send(dm_env_rpc_pb2.JoinWorldRequest(
+        world_name=self._server_connection.world_name))
+    super().setUp()
+
+  def tearDown(self):
+    super().tearDown()
+    self._server_connection.close()
+
+
+class CatchDmEnvTest(test_utils.EnvironmentTestMixin, absltest.TestCase):
+
+  def setUp(self):
+    self._server_connection = ServerConnection()
+    self._connection = self._server_connection.connection
+
+    request = dm_env_rpc_pb2.JoinWorldRequest(
+        world_name=self._server_connection.world_name)
+    specs = self._connection.send(request).specs
     self._dm_env = dm_env_adaptor.DmEnvAdaptor(self._connection, specs)
-    self.object_under_test = self._dm_env
+    super().setUp()
+
+  def tearDown(self):
+    super().tearDown()
+    self._server_connection.close()
 
   def make_object_under_test(self):
     return self._dm_env
 
 
-class CatchTest(CatchTestBase):
+class CatchTest(absltest.TestCase):
+
+  def setUp(self):
+    super().setUp()
+
+    self._server_connection = ServerConnection()
+    self._connection = self._server_connection.connection
+    self._world_name = self._server_connection.world_name
+
+  def tearDown(self):
+    self._server_connection.close()
+    super().tearDown()
 
   def test_can_reset_world_when_joined(self):
     self._connection.send(
