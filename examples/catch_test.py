@@ -56,12 +56,14 @@ class ServerConnection(object):
     self.world_name = response.world_name
 
   def close(self):
-    self.connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
-    self.connection.send(
-        dm_env_rpc_pb2.DestroyWorldRequest(world_name=self.world_name))
-    self._server.stop(None)
-    self.connection.close()
-    self._channel.close()
+    try:
+      self.connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
+      self.connection.send(
+          dm_env_rpc_pb2.DestroyWorldRequest(world_name=self.world_name))
+    finally:
+      self.connection.close()
+      self._channel.close()
+      self._server.stop(None)
 
 
 class CatchDmEnvRpcTest(compliance.StepComplianceTestCase):
@@ -70,11 +72,16 @@ class CatchDmEnvRpcTest(compliance.StepComplianceTestCase):
   def connection(self):
     return self._server_connection.connection
 
+  @property
+  def specs(self):
+    return self._specs
+
   def setUp(self):
     self._server_connection = ServerConnection()
 
-    self.connection.send(dm_env_rpc_pb2.JoinWorldRequest(
+    response = self.connection.send(dm_env_rpc_pb2.JoinWorldRequest(
         world_name=self._server_connection.world_name))
+    self._specs = response.specs
     super().setUp()
 
   def tearDown(self):

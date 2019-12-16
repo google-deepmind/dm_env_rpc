@@ -251,7 +251,7 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
         else:
           raise RuntimeError('Unhandled message: {}'.format(message_type))
         getattr(environment_response, message_type).CopyFrom(response)
-      except RuntimeError as e:
+      except Exception as e:  # pylint: disable=broad-except
         environment_response.error.CopyFrom(status_pb2.Status(message=str(e)))
 
       yield environment_response
