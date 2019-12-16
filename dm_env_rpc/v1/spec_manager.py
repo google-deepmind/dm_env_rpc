@@ -40,7 +40,7 @@ class SpecManager(object):
 
     Args:
       specs: A dict mapping UIDs to dm_env_rpc TensorSpecs, similar to what is
-        returned by the ActionSpecResponse and ObservationSpecResponse.
+        stored in `actions` and `observations` in ActionObservationSpecs.
     """
     self._name_to_uid = {
         spec.name: uid for uid, spec in specs.items()
