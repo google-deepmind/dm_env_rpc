@@ -146,15 +146,14 @@ environment is put in a running state (that is, moving on to the next sequence),
 and the requested observations are returned. This allows agents to get the first
 set of observations for a new sequence without providing blind actions.
 
-Importantly, an agent may send as many `StepRequest`s as it wishes without
-waiting for `StepResponse`s, and these batched requests can and will transition
-from one sequence to the next. An example of this use-case would be to step with
-random actions to get a large amount of action-observation pairs to use in
-offline learning. Note that an agent does not need to call `ResetRequest` to
-transition from one sequence to the next, and in the majority of common use
-cases an agent might never call `ResetRequest` at all, instead relying on the
-natural transition from sequence to sequence that happens during a
-`StepRequest`.
+As described in the [Streaming](overview.md#streaming) section, clients may send
+multiple requests without waiting for their responses. Servers should process
+all requests in the order they are received. Processing `StepRequests` may
+change the state of the environment and transition from one sequence to the
+next. In particular, note that the agent is not required to send a
+`ResetRequest` to transition from one sequence to the next: any `StepRequest`
+can also trigger this transition. This means that if an agent sends multilpe
+step requests, some of those steps may be processed in a new sequence.
 
 From a protocol standpoint all actions are optional, and the `StepRequest`
 provides a sparse set of actions to apply. This set can even be empty. In cases

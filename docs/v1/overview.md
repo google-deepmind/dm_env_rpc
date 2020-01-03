@@ -13,30 +13,25 @@ service Environment {
 }
 ```
 
-`Process` is a bidirectional streaming RPC, meaning the connection stays active
-over the entire life of an agent-environment session and ensures the ordering of
-messages is preserved.
+Each call to `Process` creates a bidirectional streaming connection between a
+client and the server. It is up to each server to decide if it can support
+multiple simultaneous clients, if each client can instantiate its own
+[world](glossary.md#world), or if each client is expected to connect to the same
+underlying world.
 
-This RPC can support multiple streams simultaneously, so it is up to each server
-implementation to determine if it can support multiple simultaneous clients, if
-each client can instantiate its own [world](glossary.md#world), or if each
-stream is expected to connect to the same underlying world.
-
-Each stream accepts a [sequence](glossary.md#sequence) of `EnvironmentRequest`
-messages from the client, and the server always sends exactly one
-`EnvironmentResponse` for each request. The server endpoint does not send any
-other messages. The payload of the response always either corresponds to that of
-the request (e.g. a `StepResponse` in response to a `StepRequest`) or is an
-error `Status` message.
+Each connection accepts a stream of `EnvironmentRequest` messages from the
+client. The server sends exactly one `EnvironmentResponse` for each request. The
+payload of the response always either corresponds to that of the request (e.g. a
+`StepResponse` in response to a `StepRequest`) or is an error `Status` message.
 
 ### Streaming
 
-Clients may speculatively send multiple requests without waiting for responses,
-though each request is still required to be valid at the time it's processed.
-Likewise, after processing requests the server will send back responses in the
-same order as the requests were sent.
+Clients may send multiple requests without waiting for responses. The server
+processes these requests in the order that they are sent and returns the
+corresponding responses in the same order. It is the client's responsibility to
+ensure each request is valid when processed.
 
-Because the connection is streamed, message order is guaranteed.
+Note: gRPC guarantees messages will be delivered in the order they are sent.
 
 ### States
 

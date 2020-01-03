@@ -2,8 +2,9 @@
 
 ### Server
 
-A server runs a gRPC server which implements this protocol. It can host one or
-more worlds.
+A server is a process which implements the dm_env_rpc `Environment` gRPC
+service. A server can host one or more worlds and allow one or more client
+connections.
 
 ### Client
 
