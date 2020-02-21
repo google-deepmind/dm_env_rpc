@@ -27,9 +27,9 @@ from dm_env_rpc.v1 import tensor_spec_utils
 from dm_env_rpc.v1 import tensor_utils
 
 
-def _find_uid_not_in_list(uid_list):
-  """Finds an example UID not in `uid_list`."""
-  uids = set(uid_list)
+def _find_uid_not_in_set(uid_set):
+  """Finds an example UID not in `uid_set`."""
+  uids = set(uid_set)
   uid = 0
   while uid in uids:
     uid = uid + 1
@@ -139,11 +139,11 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
 
   @property
   def observation_uids(self):
-    return list(self.specs.observations.keys())
+    return set(self.specs.observations.keys())
 
   @property
   def action_uids(self):
-    return list(self.specs.actions.keys())
+    return set(self.specs.actions.keys())
 
   @property
   def numeric_actions(self):
@@ -170,10 +170,10 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
   def test_requested_observations_are_returned(self):
     response = self.step(requested_observations=self.observation_uids)
     observations = response.observations
-    self.assertEqual(self.observation_uids, list(observations.keys()))
+    self.assertEqual(self.observation_uids, set(observations.keys()))
 
   def test_cannot_request_invalid_observation_uid(self):
-    bad_uid = _find_uid_not_in_list(self.observation_uids)
+    bad_uid = _find_uid_not_in_set(self.observation_uids)
     with self.assertRaisesRegex(ValueError, str(bad_uid)):
       self.step(requested_observations=[bad_uid])
 
@@ -199,9 +199,8 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         _assert_greater_equal(unpacked, bounds.min)
 
   def test_duplicated_requested_observations_are_redundant(self):
-    response = self.step(requested_observations=self.observation_uids * 2)
-    self.assertEqual(set(self.observation_uids),
-                     set(response.observations.keys()))
+    response = self.step(requested_observations=list(self.observation_uids) * 2)
+    self.assertEqual(self.observation_uids, set(response.observations.keys()))
 
   def test_can_request_each_observation_individually(self):
     for uid in self.observation_uids:
@@ -214,7 +213,7 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
   # Actions
   ##############################################################################
   def test_first_step_actions_are_ignored(self):
-    bad_uid = _find_uid_not_in_list(self.action_uids)
+    bad_uid = _find_uid_not_in_set(self.action_uids)
     self.step(actions={bad_uid: tensor_utils.pack_tensor(0)})
 
   @_step_before_test
@@ -248,7 +247,7 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
 
   @_step_before_test
   def test_cannot_send_invalid_action_uid(self):
-    bad_uid = _find_uid_not_in_list(self.action_uids)
+    bad_uid = _find_uid_not_in_set(self.action_uids)
     with self.assertRaises(ValueError):
       self.step(actions={bad_uid: tensor_utils.pack_tensor(0)})
 
@@ -328,4 +327,3 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         tensor.shape[:] = shape
         self.step(actions={uid: tensor})
   # pylint: enable=missing-docstring
-
