@@ -62,6 +62,19 @@ $ git clone --recursive https://github.com/deepmind/dm_env_rpc.git
 $ pip install ./dm_env_rpc
 ```
 
+## Citing `dm_env_rpc`
+
+To cite this repository:
+
+```bibtex
+@misc{dm_env_rpc2019,
+  author = {Tom Ward and Jay Lemmon},
+  title = {dm\_env\_rpc: A networking protocol for agent-environment communication},
+  url = {http://github.com/deepmind/dm_env_rpc},
+  year = {2019},
+}
+```
+
 ## Notice
 
 This is not an officially supported Google product
