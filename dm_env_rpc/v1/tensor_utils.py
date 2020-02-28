@@ -34,7 +34,7 @@ class _BytesWrapper(object):
     self._signed = signed
 
   def __getitem__(self, index):
-    return self._array.array[index]
+    return self._to_scalar(self._array.array[index])
 
   def __setitem__(self, index, value):
     if index == slice(None, None, None):
@@ -45,6 +45,9 @@ class _BytesWrapper(object):
 
   def __len__(self):
     return len(self._array.array)
+
+  def _to_scalar(self, value):
+    return np.int8(value) if self._signed else np.uint8(value)
 
   def as_np_array(self):
     return np.frombuffer(

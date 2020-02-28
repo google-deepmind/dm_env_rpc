@@ -220,7 +220,7 @@ class UnpackTensorTests(parameterized.TestCase):
     with self.assertRaisesRegexp(ValueError, 'cannot reshape array'):
       tensor_utils.unpack_tensor(tensor)
 
-  def test_integer_broadcasts_1_element_to_all_elements(self):
+  def test_float_broadcasts_1_element_to_all_elements(self):
     tensor = dm_env_rpc_pb2.Tensor()
     tensor.floats.array[:] = [1]
     tensor.shape[:] = [4]
@@ -228,12 +228,20 @@ class UnpackTensorTests(parameterized.TestCase):
     expected = np.array([1, 1, 1, 1], dtype=np.float32)
     np.testing.assert_array_equal(expected, unpacked)
 
-  def test_float_broadcasts_1_element_to_all_elements(self):
+  def test_integer_broadcasts_1_element_to_all_elements(self):
     tensor = dm_env_rpc_pb2.Tensor()
     tensor.int32s.array[:] = [1]
     tensor.shape[:] = [4]
     unpacked = tensor_utils.unpack_tensor(tensor)
     expected = np.array([1, 1, 1, 1], dtype=np.int32)
+    np.testing.assert_array_equal(expected, unpacked)
+
+  def test_unsigned_integer_broadcasts_1_element_to_all_elements(self):
+    tensor = dm_env_rpc_pb2.Tensor()
+    tensor_utils._BytesWrapper(tensor.uint8s, signed=False)[:] = [1]
+    tensor.shape[:] = [4]
+    unpacked = tensor_utils.unpack_tensor(tensor)
+    expected = np.array([1, 1, 1, 1], dtype=np.uint8)
     np.testing.assert_array_equal(expected, unpacked)
 
   def test_string_broadcasts_1_element_to_all_elements(self):
