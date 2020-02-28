@@ -14,9 +14,8 @@
 # ============================================================================
 """Helper Python utilities for bridging dm_env_rpc and NumPy.
 
-Note that the dm_env_rpc proto payload is not supported, as it doesn't play well
-with
-NumPy.
+Note that the Tensor proto payload type is not supported, as it doesn't play
+well with NumPy.
 """
 
 import struct
