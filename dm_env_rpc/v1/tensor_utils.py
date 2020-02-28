@@ -54,7 +54,7 @@ class _BytesWrapper(object):
 
 
 # Payload channel name, NumPy representation, and the payload array.
-_RAW_ASSOCIATIONS = [
+_RAW_ASSOCIATIONS = (
     ('floats', np.float32, lambda tensor: tensor.floats.array),
     ('doubles', np.float64, lambda tensor: tensor.doubles.array),
     ('int8s', np.int8, lambda tensor: _BytesWrapper(tensor.int8s, signed=True)),
@@ -66,10 +66,10 @@ _RAW_ASSOCIATIONS = [
     ('uint64s', np.uint64, lambda tensor: tensor.uint64s.array),
     ('bools', np.bool_, lambda tensor: tensor.bools.array),
     ('strings', np.str_, lambda tensor: tensor.strings.array),
-]
+)
 
-_NAME_TO_TYPE_AND_PAYLOAD = {
-    name: (np_type, payload) for name, np_type, payload in _RAW_ASSOCIATIONS
+_NAME_TO_NP_TYPE = {
+    name: np_type for name, np_type, payload in _RAW_ASSOCIATIONS
 }
 
 _TYPE_TO_PAYLOAD = {
@@ -93,10 +93,10 @@ _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
 def get_tensor_type(tensor_proto):
   """Returns the NumPy type for the given tensor."""
   payload = tensor_proto.WhichOneof('payload')
-  lookup = _NAME_TO_TYPE_AND_PAYLOAD.get(payload)
-  if not lookup:
+  np_type = _NAME_TO_NP_TYPE.get(payload)
+  if not np_type:
     raise TypeError('Unknown type {}'.format(payload))
-  return lookup[0]
+  return np_type
 
 
 def data_type_to_np_type(dm_env_rpc_dtype):
@@ -119,31 +119,25 @@ def unpack_tensor(tensor_proto):
     `shape` attribute is empty, returns a scalar (float, int, string, etc.)
     of the correct type and value.
   """
-  payload = tensor_proto.WhichOneof('payload')
-
-  def _unknown_type(*_):
-    raise TypeError('Unknown type {}'.format(payload))
-
-  np_type, payload_fetcher = _NAME_TO_TYPE_AND_PAYLOAD.get(
-      payload, (None, _unknown_type))
-  payload_stream = payload_fetcher(tensor_proto)
+  np_type = get_tensor_type(tensor_proto)
+  payload = _TYPE_TO_PAYLOAD[np_type](tensor_proto)
   if tensor_proto.shape:
-    if len(payload_stream) == 1:
-      array = np.full(np.maximum(tensor_proto.shape, 1), payload_stream[0])
+    if len(payload) == 1:
+      array = np.full(np.maximum(tensor_proto.shape, 1), payload[0])
     else:
-      if isinstance(payload_stream, _BytesWrapper):
-        array = payload_stream.as_np_array()
+      if isinstance(payload, _BytesWrapper):
+        array = payload.as_np_array()
       else:
-        array = np.array(payload_stream, np_type)
+        array = np.array(payload, np_type)
       array.shape = tensor_proto.shape
     return array
   else:
-    length = len(payload_stream)
+    length = len(payload)
     if length != 1:
       raise ValueError(
           'Scalar tensors must have exactly 1 element but had {} elements.'
           .format(length))
-    return np_type(payload_stream[0])
+    return np_type(payload[0])
 
 
 def pack_tensor(value, dtype=None, try_compress=False):
