@@ -35,7 +35,7 @@ def _np_range_info(np_type):
 
 
 def _get_value(min_max_value, default):
-  which = min_max_value.WhichOneof('value')
+  which = min_max_value.WhichOneof('payload')
   value = which and getattr(min_max_value, which)
   return default if value is None else value
 
@@ -60,12 +60,12 @@ def bounds(tensor_spec):
     raise ValueError('TensorSpec "{}" has non-numeric type {}.'
                      .format(tensor_spec.name, tensor_spec_type))
 
-  min_which = tensor_spec.min.WhichOneof('value')
+  min_which = tensor_spec.min.WhichOneof('payload')
   if min_which and tensor_spec_type != min_which:
     raise ValueError('TensorSpec "{}" has dtype {} but min type {}.'
                      .format(tensor_spec.name, tensor_spec_type, min_which))
 
-  max_which = tensor_spec.max.WhichOneof('value')
+  max_which = tensor_spec.max.WhichOneof('payload')
   if max_which and tensor_spec_type != max_which:
     raise ValueError('TensorSpec "{}" has dtype {} but max type {}.'
                      .format(tensor_spec.name, tensor_spec_type, max_which))

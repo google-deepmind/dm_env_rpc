@@ -115,7 +115,7 @@ message TensorSpec {
     // (such as int8/uint8) the closest proto datatype is used instead
     // (such as int32/uint32).  Servers should ensure the value is still in the
     // appropriate range for the real data type.
-    oneof value {
+    oneof payload {
       float float = 1;
       double double = 2;
       int32 int8 = 7;
