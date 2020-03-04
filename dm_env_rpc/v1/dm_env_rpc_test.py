@@ -19,11 +19,10 @@ testing/demonstrating how the protobufs would have to be used in code.
 """
 
 from absl.testing import absltest
-from absl.testing import parameterized
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 
 
-class TensorTests(parameterized.TestCase):
+class TensorTests(absltest.TestCase):
 
   def test_setting_tensor_data(self):
     tensor = dm_env_rpc_pb2.Tensor()
@@ -40,7 +39,7 @@ class TensorTests(parameterized.TestCase):
     self.assertEqual('floats', tensor.WhichOneof('payload'))
 
 
-class TensorSpec(parameterized.TestCase):
+class TensorSpec(absltest.TestCase):
 
   def test_setting_spec(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
@@ -51,7 +50,7 @@ class TensorSpec(parameterized.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.FLOAT
 
 
-class JoinWorldResponse(parameterized.TestCase):
+class JoinWorldResponse(absltest.TestCase):
 
   def test_setting_spec(self):
     response = dm_env_rpc_pb2.JoinWorldResponse()
@@ -60,7 +59,7 @@ class JoinWorldResponse(parameterized.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.FLOAT
 
 
-class ListPropertyResponse(parameterized.TestCase):
+class ListPropertyResponse(absltest.TestCase):
 
   def test_setting_response(self):
     response = dm_env_rpc_pb2.ListPropertyResponse()

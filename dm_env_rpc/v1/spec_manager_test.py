@@ -15,7 +15,6 @@
 """Tests for SpecManager class."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
@@ -23,7 +22,7 @@ from dm_env_rpc.v1 import spec_manager
 from dm_env_rpc.v1 import tensor_utils
 
 
-class SpecManagerTests(parameterized.TestCase):
+class SpecManagerTests(absltest.TestCase):
 
   def setUp(self):
     super(SpecManagerTests, self).setUp()
@@ -136,7 +135,7 @@ class SpecManagerTests(parameterized.TestCase):
           {55: tensor_utils.pack_tensor([1, 2, 3], dtype=np.float32)})
 
 
-class SpecManagerConstructorTests(parameterized.TestCase):
+class SpecManagerConstructorTests(absltest.TestCase):
 
   def test_duplicate_names_raise_error(self):
     specs = {

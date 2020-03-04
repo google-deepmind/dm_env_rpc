@@ -17,7 +17,6 @@
 import contextlib
 
 from absl.testing import absltest
-from absl.testing import parameterized
 import mock
 
 from google.protobuf import any_pb2
@@ -77,7 +76,7 @@ def _create_mock_channel():
     yield mock.MagicMock()
 
 
-class ConnectionTests(parameterized.TestCase):
+class ConnectionTests(absltest.TestCase):
 
   def test_create(self):
     with _create_mock_channel() as mock_channel:

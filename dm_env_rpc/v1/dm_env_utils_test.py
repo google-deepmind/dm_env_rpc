@@ -15,7 +15,6 @@
 """Tests for dm_env_rpc/dm_env utilities."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 from dm_env import specs
 import numpy as np
 
@@ -24,7 +23,7 @@ from dm_env_rpc.v1 import dm_env_utils
 from dm_env_rpc.v1 import spec_manager
 
 
-class TensorSpecToDmEnvSpecTests(parameterized.TestCase):
+class TensorSpecToDmEnvSpecTests(absltest.TestCase):
 
   def test_no_bounds_gives_arrayspec(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
@@ -108,7 +107,7 @@ class TensorSpecToDmEnvSpecTests(parameterized.TestCase):
       dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
 
 
-class DmEnvSpecTests(parameterized.TestCase):
+class DmEnvSpecTests(absltest.TestCase):
 
   def test_spec(self):
     dm_env_rpc_specs = {

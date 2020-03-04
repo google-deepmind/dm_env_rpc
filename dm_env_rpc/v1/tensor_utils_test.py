@@ -304,7 +304,7 @@ class UnpackTensorTests(parameterized.TestCase):
       tensor_utils.unpack_tensor(tensor)
 
 
-class GetTensorTypeTests(parameterized.TestCase):
+class GetTensorTypeTests(absltest.TestCase):
 
   def test_float(self):
     tensor = tensor_utils.pack_tensor(1.25)
@@ -317,7 +317,7 @@ class GetTensorTypeTests(parameterized.TestCase):
       tensor_utils.get_tensor_type(mock_tensor)
 
 
-class GetTensorSpecTypeTests(parameterized.TestCase):
+class GetTensorSpecTypeTests(absltest.TestCase):
 
   def test_float(self):
     self.assertEqual(
@@ -333,7 +333,7 @@ class GetTensorSpecTypeTests(parameterized.TestCase):
       tensor_utils.data_type_to_np_type(30)
 
 
-class BytesWrapperTests(parameterized.TestCase):
+class BytesWrapperTests(absltest.TestCase):
 
   def test_unsupported_indexing_on_write_raises_error(self):
     tensor = dm_env_rpc_pb2.Tensor()

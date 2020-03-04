@@ -15,7 +15,6 @@
 """Tests for dm_env_rpc helper functions."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 
 import numpy as np
 
@@ -24,7 +23,7 @@ from dm_env_rpc.v1 import tensor_spec_utils
 from dm_env_rpc.v1 import tensor_utils
 
 
-class NpRangeInfoTests(parameterized.TestCase):
+class NpRangeInfoTests(absltest.TestCase):
 
   def test_floating(self):
     expected_min = np.finfo(np.float32).min

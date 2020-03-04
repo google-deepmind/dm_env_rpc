@@ -15,7 +15,6 @@
 """Tests for dm_env_rpc/dm_env adaptor."""
 
 from absl.testing import absltest
-from absl.testing import parameterized
 import dm_env
 from dm_env import specs
 import mock
@@ -90,7 +89,7 @@ _RESERVED_STEP_RESPONSE = dm_env_rpc_pb2.StepResponse(
     })
 
 
-class DmEnvAdaptorTests(parameterized.TestCase):
+class DmEnvAdaptorTests(absltest.TestCase):
 
   def setUp(self):
     super(DmEnvAdaptorTests, self).setUp()
@@ -244,7 +243,7 @@ class OverrideRewardDiscount(dm_env_adaptor.DmEnvAdaptor):
     super(OverrideRewardDiscount, self).__init__(self.connection, _SAMPLE_SPEC)
 
 
-class RewardDiscountOverrideTests(parameterized.TestCase):
+class RewardDiscountOverrideTests(absltest.TestCase):
 
   def test_override_reward(self):
     env = OverrideRewardDiscount()
@@ -279,7 +278,7 @@ class RewardDiscountOverrideTests(parameterized.TestCase):
     }, env.discount.call_args[1]['observations'])
 
 
-class ReservedKeywordTests(parameterized.TestCase):
+class ReservedKeywordTests(absltest.TestCase):
 
   def setUp(self):
     super(ReservedKeywordTests, self).setUp()
@@ -308,7 +307,7 @@ class ReservedKeywordTests(parameterized.TestCase):
     self.assertEqual('goodbye', timestep.discount)
 
 
-class EnvironmentAutomaticallyRequestsReservedKeywords(parameterized.TestCase):
+class EnvironmentAutomaticallyRequestsReservedKeywords(absltest.TestCase):
 
   def setUp(self):
     super(EnvironmentAutomaticallyRequestsReservedKeywords, self).setUp()
