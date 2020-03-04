@@ -124,7 +124,15 @@ message TensorSpec {
       uint32 uint8 = 8;
       uint32 uint32 = 5;
       uint64 uint64 = 6;
-      // The next tag number is 9.
+
+      Tensor.FloatArray floats = 9;
+      Tensor.DoubleArray doubles = 10;
+      Tensor.Int8Array int8s = 11;
+      Tensor.Int32Array int32s = 12;
+      Tensor.Int64Array int64s = 13;
+      Tensor.Uint8Array uint8s = 14;
+      Tensor.Uint32Array uint32s = 15;
+      Tensor.Uint64Array uint64s = 16;
     }
   }
 

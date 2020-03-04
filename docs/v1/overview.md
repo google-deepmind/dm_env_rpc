@@ -126,7 +126,14 @@ observation) so clients can use them as keys.
 #### Ranges
 
 Numerical tensors can have min and max ranges on the TensorSpec. These ranges
-are inclusive.
+are inclusive, and can be either:
+
+*   Scalar: Indicates all `Tensor` elements must adhere to this `min/max` value.
+*   N-dimensional: Must match the `TensorSpec` shape, where each `Tensor`
+    element has a distinct `min/max` value.
+
+For a `TensorSpec` with a shape of [variable-length](#variable-lengths), only
+scalar ranges are supported.
 
 Note: Range is not enforced by the protocol. Servers and clients should be
 careful to validate any incoming or outgoing tensors to make sure they are in

@@ -107,6 +107,40 @@ def data_type_to_np_type(dm_env_rpc_dtype):
   return np_type
 
 
+def unpack_proto(proto, shape):
+  """Converts a proto with payload oneof to a scalar or NumPy array.
+
+  Args:
+    proto: A dm_env_rpc proto with payload oneof.
+    shape: Optional dimensions of the payload data. If not set or empty, the
+      data is assumed to be a scalar type.
+
+  Returns:
+    If `shape` is empty or None,, returns a scalar (float, int, string, etc.)
+    of the correct type and value. Otherwise returns a NumPy array of the
+    payload with the correct type and shape.
+  """
+  np_type = get_tensor_type(proto)
+  payload = _TYPE_TO_PAYLOAD[np_type](proto)
+  if shape:
+    if len(payload) == 1:
+      array = np.full(np.maximum(shape, 1), payload[0])
+    else:
+      if isinstance(payload, _BytesWrapper):
+        array = payload.as_np_array()
+      else:
+        array = np.array(payload, np_type)
+      array.shape = shape
+    return array
+  else:
+    length = len(payload)
+    if length != 1:
+      raise ValueError(
+          'Scalar tensors must have exactly 1 element but had {} elements.'
+          .format(length))
+    return np_type(payload[0])
+
+
 def unpack_tensor(tensor_proto):
   """Converts a Tensor proto to a scalar or NumPy array.
 
@@ -119,25 +153,7 @@ def unpack_tensor(tensor_proto):
     `shape` attribute is empty, returns a scalar (float, int, string, etc.)
     of the correct type and value.
   """
-  np_type = get_tensor_type(tensor_proto)
-  payload = _TYPE_TO_PAYLOAD[np_type](tensor_proto)
-  if tensor_proto.shape:
-    if len(payload) == 1:
-      array = np.full(np.maximum(tensor_proto.shape, 1), payload[0])
-    else:
-      if isinstance(payload, _BytesWrapper):
-        array = payload.as_np_array()
-      else:
-        array = np.array(payload, np_type)
-      array.shape = tensor_proto.shape
-    return array
-  else:
-    length = len(payload)
-    if length != 1:
-      raise ValueError(
-          'Scalar tensors must have exactly 1 element but had {} elements.'
-          .format(length))
-    return np_type(payload[0])
+  return unpack_proto(tensor_proto, tensor_proto.shape)
 
 
 def pack_tensor(value, dtype=None, try_compress=False):

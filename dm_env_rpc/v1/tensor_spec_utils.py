@@ -23,6 +23,9 @@ from dm_env_rpc.v1 import tensor_utils
 
 Bounds = collections.namedtuple('Bounds', ['min', 'max'])
 
+_SCALAR_VALUE_TYPES = frozenset(
+    ('float', 'double', 'int8', 'int32', 'int64', 'uint8', 'uint32', 'uint64'))
+
 
 def _np_range_info(np_type):
   """Returns type info for `np_type`, which includes min and max attributes."""
@@ -34,10 +37,36 @@ def _np_range_info(np_type):
     raise ValueError('{} does not have range info.'.format(np_type))
 
 
-def _get_value(min_max_value, default):
+def _get_value(min_max_value, shape, default):
+  """Helper function that returns the min/max bounds for a Value message.
+
+  Args:
+    min_max_value: Value protobuf message to get value from.
+    shape: Optional dimensions to unpack payload data to.
+    default: Value to use if min_max_value is not set.
+
+  Returns:
+    A scalar if `shape` is empty or None, or an unpacked NumPy array of either
+    the unpacked value or provided default.
+
+  """
   which = min_max_value.WhichOneof('payload')
   value = which and getattr(min_max_value, which)
-  return default if value is None else value
+
+  if value is None:
+    min_max = np.broadcast_to(default, shape) if shape else default
+  elif which in _SCALAR_VALUE_TYPES:
+    min_max = np.broadcast_to(value, shape) if shape else value
+  else:
+    min_max = tensor_utils.unpack_proto(min_max_value, shape)
+
+  if (shape is not None
+      and np.any(np.array(shape) < 0)
+      and np.asarray(min_max).size > 1):
+    raise ValueError(
+        "TensorSpec's with variable length shapes can only have scalar ranges. "
+        'Shape: {}, value: {}'.format(shape, min_max))
+  return min_max
 
 
 def bounds(tensor_spec):
@@ -61,27 +90,28 @@ def bounds(tensor_spec):
                      .format(tensor_spec.name, tensor_spec_type))
 
   min_which = tensor_spec.min.WhichOneof('payload')
-  if min_which and tensor_spec_type != min_which:
-    raise ValueError('TensorSpec "{}" has dtype {} but min type {}.'
-                     .format(tensor_spec.name, tensor_spec_type, min_which))
+  if min_which and not min_which.startswith(tensor_spec_type):
+    raise ValueError('TensorSpec "{}" has dtype {} but min type {}.'.format(
+        tensor_spec.name, tensor_spec_type, min_which))
 
   max_which = tensor_spec.max.WhichOneof('payload')
-  if max_which and tensor_spec_type != max_which:
-    raise ValueError('TensorSpec "{}" has dtype {} but max type {}.'
-                     .format(tensor_spec.name, tensor_spec_type, max_which))
+  if max_which and not max_which.startswith(tensor_spec_type):
+    raise ValueError('TensorSpec "{}" has dtype {} but max type {}.'.format(
+        tensor_spec.name, tensor_spec_type, max_which))
 
   dtype_bounds = _np_range_info(np_type)
-  min_bound = _get_value(tensor_spec.min, dtype_bounds.min)
-  max_bound = _get_value(tensor_spec.max, dtype_bounds.max)
+  min_bound = _get_value(tensor_spec.min, tensor_spec.shape, dtype_bounds.min)
+  max_bound = _get_value(tensor_spec.max, tensor_spec.shape, dtype_bounds.max)
 
-  if (min_bound < dtype_bounds.min) or (max_bound > dtype_bounds.max):
+  if (np.any(min_bound < dtype_bounds.min) or
+      np.any(max_bound > dtype_bounds.max)):
     raise ValueError(
         'TensorSpec "{}"\'s bounds [{}, {}] are larger than the bounds on its '
         '{} dtype [{}, {}]'.format(
             tensor_spec.name, min_bound, max_bound, tensor_spec_type,
             dtype_bounds.min, dtype_bounds.max))
 
-  if max_bound < min_bound:
+  if np.any(max_bound < min_bound):
     raise ValueError('TensorSpec "{}" has min {} larger than max {}.'.format(
         tensor_spec.name, min_bound, max_bound))
 
