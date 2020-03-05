@@ -15,25 +15,42 @@
 """Utilities for interfacing dm_env and dm_env_rpc."""
 
 from dm_env import specs
+import numpy as np
 
 from dm_env_rpc.v1 import tensor_spec_utils
 from dm_env_rpc.v1 import tensor_utils
 
 
 def tensor_spec_to_dm_env_spec(tensor_spec):
-  """Returns the dm_env Array or BoundedArray given a dm_env_rpc TensorSpec."""
-  tensor_type = tensor_utils.data_type_to_np_type(tensor_spec.dtype)
+  """Returns a dm_env spec given a dm_env_rpc TensorSpec.
+
+  Args:
+    tensor_spec: A dm_env_rpc TensorSpec protobuf.
+
+  Returns:
+    Either a DiscreteArray, BoundedArray or Array, depending on the content of
+    the TensorSpec.
+  """
+  np_type = tensor_utils.data_type_to_np_type(tensor_spec.dtype)
   if tensor_spec.HasField('min') or tensor_spec.HasField('max'):
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    return specs.BoundedArray(
-        shape=tensor_spec.shape,
-        dtype=tensor_type,
-        name=tensor_spec.name,
-        minimum=bounds.min,
-        maximum=bounds.max)
+
+    if (not tensor_spec.shape
+        and np.issubdtype(np_type, np.integer)
+        and bounds.min == 0
+        and tensor_spec.HasField('max')):
+      return specs.DiscreteArray(
+          num_values=bounds.max + 1, dtype=np_type, name=tensor_spec.name)
+    else:
+      return specs.BoundedArray(
+          shape=tensor_spec.shape,
+          dtype=np_type,
+          name=tensor_spec.name,
+          minimum=bounds.min,
+          maximum=bounds.max)
   else:
     return specs.Array(
-        shape=tensor_spec.shape, dtype=tensor_type, name=tensor_spec.name)
+        shape=tensor_spec.shape, dtype=np_type, name=tensor_spec.name)
 
 
 def dm_env_spec(spec_manager):

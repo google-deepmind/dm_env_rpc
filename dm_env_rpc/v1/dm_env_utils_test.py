@@ -34,6 +34,45 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     self.assertEqual(specs.Array(shape=[3], dtype=np.uint32), actual)
     self.assertEqual('foo', actual.name)
 
+  def test_scalar_with_0_n_bounds_gives_discrete_array(self):
+    tensor_spec = dm_env_rpc_pb2.TensorSpec()
+    tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
+    tensor_spec.name = 'foo'
+
+    max_value = 9
+    tensor_spec.min.uint32 = 0
+    tensor_spec.max.uint32 = max_value
+    actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
+    expected = specs.DiscreteArray(
+        num_values=max_value + 1, dtype=np.uint32, name='foo')
+    self.assertEqual(expected, actual)
+    self.assertEqual(0, actual.minimum)
+    self.assertEqual(max_value, actual.maximum)
+    self.assertEqual('foo', actual.name)
+
+  def test_scalar_with_1_n_bounds_gives_bounded_array(self):
+    tensor_spec = dm_env_rpc_pb2.TensorSpec()
+    tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
+    tensor_spec.name = 'foo'
+    tensor_spec.min.uint32 = 1
+    tensor_spec.max.uint32 = 10
+    actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
+    expected = specs.BoundedArray(
+        shape=(), dtype=np.uint32, minimum=1, maximum=10, name='foo')
+    self.assertEqual(expected, actual)
+    self.assertEqual('foo', actual.name)
+
+  def test_scalar_with_0_min_and_no_max_bounds_gives_bounded_array(self):
+    tensor_spec = dm_env_rpc_pb2.TensorSpec()
+    tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
+    tensor_spec.name = 'foo'
+    tensor_spec.min.uint32 = 0
+    actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
+    expected = specs.BoundedArray(
+        shape=(), dtype=np.uint32, minimum=0, maximum=2**32 - 1, name='foo')
+    self.assertEqual(expected, actual)
+    self.assertEqual('foo', actual.name)
+
   def test_only_min_bounds(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
@@ -83,7 +122,7 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
 
     actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
     expected = specs.BoundedArray(
-        shape=[3], dtype=np.uint32, minimum=0, maximum=2**32-1)
+        shape=[3], dtype=np.uint32, minimum=0, maximum=2**32 - 1)
     self.assertEqual(expected, actual)
     self.assertEqual('foo', actual.name)
 
