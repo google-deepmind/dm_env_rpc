@@ -44,8 +44,8 @@ class TensorSpec(absltest.TestCase):
   def test_setting_spec(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.name = 'Foo'
-    tensor_spec.min.float = 0.0
-    tensor_spec.max.float = 0.0
+    tensor_spec.min.floats.array[:] = [0.0]
+    tensor_spec.max.floats.array[:] = [0.0]
     tensor_spec.shape[:] = [2, 2]
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.FLOAT
 

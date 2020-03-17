@@ -111,19 +111,18 @@ enum DataType {
 
 message TensorSpec {
   message Value {
-    // For data types that do not have an exact single element proto type match
-    // (such as int8/uint8) the closest proto datatype is used instead
-    // (such as int32/uint32).  Servers should ensure the value is still in the
-    // appropriate range for the real data type.
     oneof payload {
-      float float = 1;
-      double double = 2;
-      int32 int8 = 7;
-      int32 int32 = 3;
-      int64 int64 = 4;
-      uint32 uint8 = 8;
-      uint32 uint32 = 5;
-      uint64 uint64 = 6;
+      // Deprecated scalar Value fields, which are scheduled for removal in a
+      // future release. For broadcastable min/max values, please use array
+      // fields below to create a single element array of the relevant type.
+      float float = 1 [deprecated = true];
+      double double = 2 [deprecated = true];
+      int32 int8 = 7 [deprecated = true];
+      int32 int32 = 3 [deprecated = true];
+      int64 int64 = 4 [deprecated = true];
+      uint32 uint8 = 8 [deprecated = true];
+      uint32 uint32 = 5 [deprecated = true];
+      uint64 uint64 = 6 [deprecated = true];
 
       Tensor.FloatArray floats = 9;
       Tensor.DoubleArray doubles = 10;

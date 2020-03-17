@@ -40,8 +40,8 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec.name = 'foo'
 
     max_value = 9
-    tensor_spec.min.uint32 = 0
-    tensor_spec.max.uint32 = max_value
+    tensor_spec.min.uint32s.array[:] = [0]
+    tensor_spec.max.uint32s.array[:] = [max_value]
     actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
     expected = specs.DiscreteArray(
         num_values=max_value + 1, dtype=np.uint32, name='foo')
@@ -54,8 +54,8 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.name = 'foo'
-    tensor_spec.min.uint32 = 1
-    tensor_spec.max.uint32 = 10
+    tensor_spec.min.uint32s.array[:] = [1]
+    tensor_spec.max.uint32s.array[:] = [10]
     actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
     expected = specs.BoundedArray(
         shape=(), dtype=np.uint32, minimum=1, maximum=10, name='foo')
@@ -66,7 +66,7 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.name = 'foo'
-    tensor_spec.min.uint32 = 0
+    tensor_spec.min.uint32s.array[:] = [0]
     actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
     expected = specs.BoundedArray(
         shape=(), dtype=np.uint32, minimum=0, maximum=2**32 - 1, name='foo')
@@ -78,7 +78,7 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.shape[:] = [3]
     tensor_spec.name = 'foo'
-    tensor_spec.min.uint32 = 1
+    tensor_spec.min.uint32s.array[:] = [1]
     actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
     expected = specs.BoundedArray(
         shape=[3], dtype=np.uint32, minimum=1, maximum=2**32 - 1)
@@ -90,7 +90,7 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.shape[:] = [3]
     tensor_spec.name = 'foo'
-    tensor_spec.max.uint32 = 10
+    tensor_spec.max.uint32s.array[:] = [10]
     actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
     expected = specs.BoundedArray(
         shape=[3], dtype=np.uint32, minimum=0, maximum=10)
@@ -102,8 +102,8 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.shape[:] = [3]
     tensor_spec.name = 'foo'
-    tensor_spec.min.uint32 = 1
-    tensor_spec.max.uint32 = 10
+    tensor_spec.min.uint32s.array[:] = [1]
+    tensor_spec.max.uint32s.array[:] = [10]
     actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
     expected = specs.BoundedArray(
         shape=[3], dtype=np.uint32, minimum=1, maximum=10)
@@ -117,8 +117,8 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec.name = 'foo'
 
     # Just to force the message to get created.
-    tensor_spec.min.float = 3
-    tensor_spec.min.ClearField('float')
+    tensor_spec.min.floats.array[:] = [3.0]
+    tensor_spec.min.ClearField('floats')
 
     actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
     expected = specs.BoundedArray(
@@ -131,7 +131,7 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.shape[:] = [3]
     tensor_spec.name = 'foo'
-    tensor_spec.min.float = 1.9
+    tensor_spec.min.floats.array[:] = [1.9]
     with self.assertRaisesRegex(ValueError, 'uint32'):
       dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
 
@@ -140,8 +140,8 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.STRING
     tensor_spec.shape[:] = [2]
     tensor_spec.name = 'named'
-    tensor_spec.min.float = 1.9
-    tensor_spec.max.float = 10.0
+    tensor_spec.min.floats.array[:] = [1.9]
+    tensor_spec.max.floats.array[:] = [10.0]
     with self.assertRaisesRegex(ValueError, 'string'):
       dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
 
