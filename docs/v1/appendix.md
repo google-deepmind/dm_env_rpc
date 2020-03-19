@@ -200,6 +200,28 @@ hard coded or specified in world settings or join settings. Server implementers
 are advised to consider performance impacts of whatever choice they make, as
 rendering time often dominates the runtime of many environments.
 
+### Per-element Min/Max Ranges {#per-element-ranges}
+
+When defining actions for an environment, it's desirable to provide users with
+the range of valid values that can be sent. `TensorSpec`s support this by
+providing min and max range fields, which can either be defined as a single
+scalar (see [broadcastable](overview.md#broadcastable)) for all elements in a
+`Tensor`, or each element can have their own range defined.
+
+For the vast majority of actions, we strongly encourage a single range only
+should be defined. When users start defining per-element ranges, this is
+typically indicative of the action being a combination of several, distinct
+actions. By slicing the action into separate actions, there's also the benefit
+of providing a more descriptive name, as well as making it easier for clients to
+easily compose their own action spaces.
+
+There are some examples where it may be desirable to not split the action. For
+example, imagine an `ABSOLUTE_MOUSE_XY` action. This would have two elements
+(one for the `X` and `Y` positions respectively), but would likely have
+different ranges based on the width and height of the screen. Splitting the
+action would mean agents could send only the `X` or `Y` action without the
+other, which might not be valid.
+
 ### Documentation
 
 Actions and observations can be self-documenting, in the sense that their

@@ -135,6 +135,10 @@ are inclusive, and can be either:
 For a `TensorSpec` with a shape of [variable-length](#variable-lengths), only
 scalar ranges are supported.
 
+Whilst distinct, per-element `min/max` ranges are supported, we encourage
+implementers to instead provide separate actions. For more discussion, see the
+[per-element min/max range](appendix.md#per-element-ranges) appendix.
+
 Note: Range is not enforced by the protocol. Servers and clients should be
 careful to validate any incoming or outgoing tensors to make sure they are in
 range. Servers should return an error for any out of range tensors from the
