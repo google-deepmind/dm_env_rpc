@@ -1,4 +1,5 @@
-# Copyright 2019 DeepMind Technologies Limited. All Rights Reserved.
+# Lint as: python3
+# Copyright 2020 DeepMind Technologies Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,6 +48,7 @@ import queue
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
+from dm_env_rpc.v1 import error
 
 
 class _StreamReaderWriter(object):
@@ -102,7 +104,8 @@ class Connection(object):
       `CreateWorldRequest` this returns a message of type `CreateWorldResponse`.
 
     Raises:
-      ValueError: The dm_env_rpc server responded to the request with an error.
+      DmEnvRpcError: The dm_env_rpc server responded to the request with an
+        error.
     """
     field_name = self._type_to_field[type(request).__name__]
     environment_request = dm_env_rpc_pb2.EnvironmentRequest()
@@ -110,7 +113,7 @@ class Connection(object):
     self._stream.write(environment_request)
     response = self._stream.read()
     if response.HasField('error'):
-      raise ValueError(str(response.error))
+      raise error.DmEnvRpcError(response.error)
     return getattr(response, field_name)
 
   def close(self):

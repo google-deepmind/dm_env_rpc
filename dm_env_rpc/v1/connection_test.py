@@ -1,4 +1,4 @@
-# Copyright 2019 DeepMind Technologies Limited. All Rights Reserved.
+# Copyright 2020 DeepMind Technologies Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ from google.protobuf import struct_pb2
 from google.rpc import status_pb2
 from dm_env_rpc.v1 import connection as dm_env_rpc_connection
 from dm_env_rpc.v1 import dm_env_rpc_pb2
+from dm_env_rpc.v1 import error
 from dm_env_rpc.v1 import tensor_utils
 
 _SUEZ_SERVICE = dm_env_rpc_pb2.DESCRIPTOR.services_by_name['Environment']
@@ -87,7 +88,7 @@ class ConnectionTests(absltest.TestCase):
   def test_error(self):
     with _create_mock_channel() as mock_channel:
       with dm_env_rpc_connection.Connection(mock_channel) as connection:
-        with self.assertRaisesRegex(ValueError, 'test error'):
+        with self.assertRaisesRegex(error.DmEnvRpcError, 'test error'):
           connection.send(_BAD_CREATE_REQUEST)
 
   def test_extension(self):

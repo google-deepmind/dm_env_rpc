@@ -1,5 +1,5 @@
 # Lint as: python3
-# Copyright 2019 DeepMind Technologies Limited. All Rights Reserved.
+# Copyright 2020 DeepMind Technologies Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ from absl.testing import absltest
 import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
+from dm_env_rpc.v1 import error
 from dm_env_rpc.v1 import tensor_spec_utils
 from dm_env_rpc.v1 import tensor_utils
 
@@ -174,7 +175,7 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
 
   def test_cannot_request_invalid_observation_uid(self):
     bad_uid = _find_uid_not_in_set(self.observation_uids)
-    with self.assertRaisesRegex(ValueError, str(bad_uid)):
+    with self.assertRaisesRegex(error.DmEnvRpcError, str(bad_uid)):
       self.step(requested_observations=[bad_uid])
 
   def test_all_observation_dtypes_match_spec_dtypes(self):
@@ -231,7 +232,7 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         wrong_dtype = (np.int32 if np_type == np.issubdtype(np_type, np.inexact)
                        else np.float32)
         tensor = _create_test_tensor(spec, dtype=wrong_dtype)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(error.DmEnvRpcError):
           self.step(actions={uid: tensor})
 
   @_step_before_test
@@ -242,13 +243,13 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         shape = np.asarray(spec.shape)
         shape[shape < 0] = 1
         tensor.shape[:] = shape
-        with self.assertRaises(ValueError):
+        with self.assertRaises(error.DmEnvRpcError):
           self.step(actions={uid: tensor})
 
   @_step_before_test
   def test_cannot_send_invalid_action_uid(self):
     bad_uid = _find_uid_not_in_set(self.action_uids)
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self.step(actions={bad_uid: tensor_utils.pack_tensor(0)})
 
   @_step_before_test
@@ -263,7 +264,7 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         shape = np.asarray(spec.shape)
         shape[shape < 0] = 1
         tensor.shape[:] = shape
-        with self.assertRaises(ValueError):
+        with self.assertRaises(error.DmEnvRpcError):
           self.step(actions={uid: tensor})
 
   @_step_before_test
@@ -278,7 +279,7 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         shape = np.asarray(spec.shape)
         shape[shape < 0] = 1
         tensor.shape[:] = shape
-        with self.assertRaises(ValueError):
+        with self.assertRaises(error.DmEnvRpcError):
           self.step(actions={uid: tensor})
 
   @_step_before_test
@@ -288,7 +289,7 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         tensor = _create_test_tensor(spec)
         # Add too many dimensions to shape.
         tensor.shape[:] = tensor.shape[:] + [1]
-        with self.assertRaises(ValueError):
+        with self.assertRaises(error.DmEnvRpcError):
           self.step(actions={uid: tensor})
 
   @_step_before_test
@@ -313,7 +314,7 @@ class StepComplianceTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         # Set multiple variable dimensions.
         tensor.shape[0] = -1
         tensor.shape[1] = -1
-        with self.assertRaises(ValueError):
+        with self.assertRaises(error.DmEnvRpcError):
           self.step(actions={uid: tensor})
 
   @_step_before_test

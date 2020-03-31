@@ -1,5 +1,5 @@
 # Lint as: python3
-# Copyright 2019 DeepMind Technologies Limited. All Rights Reserved.
+# Copyright 2020 DeepMind Technologies Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ from dm_env_rpc.v1 import connection as dm_env_rpc_connection
 from dm_env_rpc.v1 import dm_env_adaptor
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
+from dm_env_rpc.v1 import error
 
 
 def _local_address(port):
@@ -128,30 +129,30 @@ class CatchTest(absltest.TestCase):
     self._connection.send(dm_env_rpc_pb2.ResetWorldRequest())
 
   def test_cannot_reset_world_when_not_joined(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(dm_env_rpc_pb2.ResetWorldRequest())
 
   def test_cannot_step_when_not_joined(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(dm_env_rpc_pb2.StepRequest())
 
   def test_cannot_reset_when_not_joined(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(dm_env_rpc_pb2.ResetRequest())
 
   def test_cannot_join_world_with_wrong_name(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(
           dm_env_rpc_pb2.JoinWorldRequest(world_name='wrong_name'))
 
   def test_cannot_create_world_when_world_exists(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(dm_env_rpc_pb2.CreateWorldRequest())
 
   def test_cannot_join_when_no_world_exists(self):
     self._connection.send(
         dm_env_rpc_pb2.DestroyWorldRequest(world_name=self._world_name))
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(
           dm_env_rpc_pb2.JoinWorldRequest(world_name=self._world_name))
     self._connection.send(dm_env_rpc_pb2.CreateWorldRequest())
@@ -159,21 +160,21 @@ class CatchTest(absltest.TestCase):
   def test_cannot_destroy_world_when_still_joined(self):
     self._connection.send(
         dm_env_rpc_pb2.JoinWorldRequest(world_name=self._world_name))
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(
           dm_env_rpc_pb2.DestroyWorldRequest(world_name=self._world_name))
 
   def test_cannot_destroy_world_with_wrong_name(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(
           dm_env_rpc_pb2.DestroyWorldRequest(world_name='wrong_name'))
 
   def test_read_property_request_is_not_supported(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(dm_env_rpc_pb2.ReadPropertyRequest())
 
   def test_write_property_request_is_not_supported(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(error.DmEnvRpcError):
       self._connection.send(dm_env_rpc_pb2.WritePropertyRequest())
 
 
