@@ -32,6 +32,7 @@ have very different technology stacks and requirements.
 
 *   [Protocol overview](docs/v1/overview.md)
 *   [Protocol reference](docs/v1/reference.md)
+*   [Extensions](docs/v1/extensions/index.md)
 *   [Appendix](docs/v1/appendix.md)
 *   [Glossary](docs/v1/glossary.md)
 
