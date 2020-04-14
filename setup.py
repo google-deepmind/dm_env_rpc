@@ -1,4 +1,4 @@
-# Copyright 2019 DeepMind Technologies Limited. All Rights Reserved.
+# Copyright 2020 DeepMind Technologies Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,9 +25,13 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.build_py import build_py
 
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-GOOGLE_COMMON_PROTOS_ROOT_DIR = os.path.join(ROOT_DIR,
-                                             'third_party/api-common-protos')
+_ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+_GOOGLE_COMMON_PROTOS_ROOT_DIR = os.path.join(_ROOT_DIR,
+                                              'third_party/api-common-protos')
+
+# Tuple of proto message definitions to build Python bindings for. Paths must
+# be relative to root directory.
+_DM_ENV_RPC_PROTOS = ('dm_env_rpc/v1/dm_env_rpc.proto',)
 
 
 class _GenerateProtoFiles(Command):
@@ -48,26 +52,28 @@ class _GenerateProtoFiles(Command):
     from grpc_tools import protoc  # pylint: disable=g-import-not-at-top
 
     if not os.path.exists(
-        os.path.join(GOOGLE_COMMON_PROTOS_ROOT_DIR, 'google/rpc/status.proto')):
+        os.path.join(_GOOGLE_COMMON_PROTOS_ROOT_DIR,
+                     'google/rpc/status.proto')):
       raise RuntimeError(
           'Cannot find third_party/api-common-protos. '
           'Please run `git submodule init && git submodule update` to install '
           'the api-common-protos submodule.'
       )
-    dm_env_rpc_proto = os.path.join(ROOT_DIR, 'dm_env_rpc/v1/dm_env_rpc.proto')
     grpc_protos_include = pkg_resources.resource_filename(
         'grpc_tools', '_proto')
-    proto_args = [
-        'grpc_tools.protoc',
-        '--proto_path={}'.format(GOOGLE_COMMON_PROTOS_ROOT_DIR),
-        '--proto_path={}'.format(grpc_protos_include),
-        '--proto_path={}'.format(ROOT_DIR),
-        '--python_out={}'.format(ROOT_DIR),
-        '--grpc_python_out={}'.format(ROOT_DIR),
-        dm_env_rpc_proto,
-    ]
-    if protoc.main(proto_args) != 0:
-      raise RuntimeError('ERROR: {}'.format(proto_args))
+
+    for proto_path in _DM_ENV_RPC_PROTOS:
+      proto_args = [
+          'grpc_tools.protoc',
+          '--proto_path={}'.format(_GOOGLE_COMMON_PROTOS_ROOT_DIR),
+          '--proto_path={}'.format(grpc_protos_include),
+          '--proto_path={}'.format(_ROOT_DIR),
+          '--python_out={}'.format(_ROOT_DIR),
+          '--grpc_python_out={}'.format(_ROOT_DIR),
+          os.path.join(_ROOT_DIR, proto_path),
+      ]
+      if protoc.main(proto_args) != 0:
+        raise RuntimeError('ERROR: {}'.format(proto_args))
 
 
 class _BuildExt(build_ext):
