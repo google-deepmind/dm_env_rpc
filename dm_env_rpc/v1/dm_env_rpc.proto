@@ -90,8 +90,7 @@ message Tensor {
 // The data type of elements of a tensor.  This must match the types in the
 // Tensor payload oneof.
 enum DataType {
-  // This is the default value indicating no value was set.  It should never be
-  // sent or received.
+  // This is the default value indicating no value was set.
   INVALID_DATA_TYPE = 0;
 
   // LINT.IfChange(DataType)

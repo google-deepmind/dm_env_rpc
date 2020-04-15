@@ -33,6 +33,12 @@ If the simulation can respond to such a message, it must send a response using
 the corresponding `extension` field in `EnvironmentResponse`. The server must
 send an [error](../overview.md#errors) if it doesn't recognise the request.
 
+## Common Extensions
+
+The following commonly used extensions are provided with `dm_env_rpc`:
+
+*   [Properties](properties.md)
+
 ## Recommendations
 
 ### Should you use an extension?
