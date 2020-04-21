@@ -31,7 +31,8 @@ _GOOGLE_COMMON_PROTOS_ROOT_DIR = os.path.join(_ROOT_DIR,
 
 # Tuple of proto message definitions to build Python bindings for. Paths must
 # be relative to root directory.
-_DM_ENV_RPC_PROTOS = ('dm_env_rpc/v1/dm_env_rpc.proto',)
+_DM_ENV_RPC_PROTOS = ('dm_env_rpc/v1/dm_env_rpc.proto',
+                      'dm_env_rpc/v1/extensions/properties.proto')
 
 
 class _GenerateProtoFiles(Command):

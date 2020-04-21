@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package dm_env_rpc.v1.extensions.properties;
 
-import "third_party/dm_env_rpc/v1/dm_env_rpc.proto";
+import "dm_env_rpc/v1/dm_env_rpc.proto";
 
 message PropertySpec {
   // Required: TensorSpec name field for key value.
