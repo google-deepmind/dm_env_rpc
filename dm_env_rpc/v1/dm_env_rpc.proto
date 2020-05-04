@@ -248,23 +248,41 @@ message DestroyWorldRequest {
 message DestroyWorldResponse {}
 
 message ReadPropertyRequest {
+  // Deprecated request, scheduled for removal in a future release. Please use
+  // dm_env_rpc.v1.extensions.properties.ReadPropertyRequest.
+  option deprecated = true;
+
   repeated string keys = 1;
 }
 
 message ReadPropertyResponse {
+  option deprecated = true;
+
   map<string, Tensor> properties = 1;
 }
 
 message WritePropertyRequest {
+  // Deprecated request, scheduled for removal in a future release. Please use
+  // dm_env_rpc.v1.extensions.properties.WritePropertyRequest.
+  option deprecated = true;
+
   map<string, Tensor> properties = 1;
 }
-message WritePropertyResponse {}
+message WritePropertyResponse {
+  option deprecated = true;
+}
 
 message ListPropertyRequest {
+  // Deprecated request, scheduled for removal in a future release. Please use
+  // dm_env_rpc.v1.extensions.properties.ListPropertyRequest.
+  option deprecated = true;
+
   // Keys to list properties for.  Empty string is the root level.
   repeated string keys = 1;
 }
 message ListPropertyResponse {
+  option deprecated = true;
+
   message Property {
     bool is_readable = 1;
     bool is_writeable = 2;
@@ -286,9 +304,12 @@ message EnvironmentRequest {
     ResetWorldRequest reset_world = 5;
     LeaveWorldRequest leave_world = 6;
     DestroyWorldRequest destroy_world = 7;
-    ReadPropertyRequest read_property = 8;
-    WritePropertyRequest write_property = 9;
-    ListPropertyRequest list_property = 10;
+
+    // Deprecated property requests, scheduled for removal in a future release.
+    // Please use properties extension for future requests/responses.
+    ReadPropertyRequest read_property = 8 [deprecated = true];
+    WritePropertyRequest write_property = 9 [deprecated = true];
+    ListPropertyRequest list_property = 10 [deprecated = true];
 
     // If the environment supports a specialized request not covered above it
     // can be sent this way.
@@ -311,9 +332,12 @@ message EnvironmentResponse {
     ResetWorldResponse reset_world = 5;
     LeaveWorldResponse leave_world = 6;
     DestroyWorldResponse destroy_world = 7;
-    ReadPropertyResponse read_property = 8;
-    WritePropertyResponse write_property = 9;
-    ListPropertyResponse list_property = 10;
+
+    // Deprecated property responses, scheduled for removal in a future release.
+    // Please use properties extension for future requests/responses.
+    ReadPropertyResponse read_property = 8 [deprecated = true];
+    WritePropertyResponse write_property = 9 [deprecated = true];
+    ListPropertyResponse list_property = 10 [deprecated = true];
 
     // If the environment supports a specialized response not covered above it
     // can be sent this way.

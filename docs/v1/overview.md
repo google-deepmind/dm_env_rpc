@@ -150,8 +150,8 @@ Unique Identifications (UIDs) are 64 bit numbers used as keys for data that is
 sent over the wire frequently, specifically observations and actions. This
 reduces the amount of data compared to string keys, since a key is needed for
 each action and observation every step. For data that is not intended to be
-referenced frequently, such as create and join settings and properties, string
-keys are used for clarity.
+referenced frequently, such as create and join settings, string keys are used
+for clarity.
 
 For more information on UIDs see [JoinWorld specs](reference.md#specs)
 
