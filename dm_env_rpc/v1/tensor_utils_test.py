@@ -210,14 +210,14 @@ class UnpackTensorTests(parameterized.TestCase):
     tensor = dm_env_rpc_pb2.Tensor()
     tensor.floats.array[:] = [1, 2, 3, 4]
     tensor.shape[:] = [2, 4]
-    with self.assertRaisesRegexp(ValueError, 'cannot reshape array'):
+    with self.assertRaisesRegex(ValueError, 'cannot reshape array'):
       tensor_utils.unpack_tensor(tensor)
 
   def test_too_many_elements(self):
     tensor = dm_env_rpc_pb2.Tensor()
     tensor.floats.array[:] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     tensor.shape[:] = [2, 4]
-    with self.assertRaisesRegexp(ValueError, 'cannot reshape array'):
+    with self.assertRaisesRegex(ValueError, 'cannot reshape array'):
       tensor_utils.unpack_tensor(tensor)
 
   def test_float_broadcasts_1_element_to_all_elements(self):
@@ -280,7 +280,7 @@ class UnpackTensorTests(parameterized.TestCase):
     tensor = dm_env_rpc_pb2.Tensor()
     tensor.int32s.array[:] = [1, 2, 3, 4, 5, 6]
     tensor.shape[:] = [-1, -2]
-    with self.assertRaisesRegexp(ValueError, 'one unknown dimension'):
+    with self.assertRaisesRegex(ValueError, 'one unknown dimension'):
       tensor_utils.unpack_tensor(tensor)
 
   def test_negative_dimension_single_element(self):
@@ -294,13 +294,13 @@ class UnpackTensorTests(parameterized.TestCase):
   def test_unknown_type_raises_error(self):
     tensor = mock.MagicMock()
     tensor.WhichOneof.return_value = 'foo'
-    with self.assertRaisesRegexp(TypeError, 'type foo'):
+    with self.assertRaisesRegex(TypeError, 'type foo'):
       tensor_utils.unpack_tensor(tensor)
 
   def test_scalar_with_too_many_elements_raises_error(self):
     tensor = dm_env_rpc_pb2.Tensor()
     tensor.int32s.array[:] = [1, 2, 3]
-    with self.assertRaisesRegexp(ValueError, '3 element'):
+    with self.assertRaisesRegex(ValueError, '3 element'):
       tensor_utils.unpack_tensor(tensor)
 
 
@@ -313,7 +313,7 @@ class GetTensorTypeTests(absltest.TestCase):
   def test_unknown_tensor_type(self):
     mock_tensor = mock.MagicMock()
     mock_tensor.WhichOneof.return_value = 'foo'
-    with self.assertRaisesRegexp(TypeError, 'foo'):
+    with self.assertRaisesRegex(TypeError, 'foo'):
       tensor_utils.get_tensor_type(mock_tensor)
 
 
@@ -338,7 +338,7 @@ class BytesWrapperTests(absltest.TestCase):
   def test_unsupported_indexing_on_write_raises_error(self):
     tensor = dm_env_rpc_pb2.Tensor()
     wrapper = tensor_utils._BytesWrapper(tensor.uint8s, signed=False)
-    with self.assertRaisesRegexp(ValueError, 'index'):
+    with self.assertRaisesRegex(ValueError, 'index'):
       wrapper[0] = 0
 
 
