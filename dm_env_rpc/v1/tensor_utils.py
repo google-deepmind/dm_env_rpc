@@ -44,7 +44,18 @@ class _RepeatedFieldPacker():
     payload.array.extend(value.ravel().tolist())
 
   def unpack(self, payload):
-    return np.array(payload.array, self._dtype)
+    return np.fromiter(payload.array, self._dtype, len(payload.array))
+
+
+class _RepeatedStringFieldPacker():
+
+  def pack(self, payload, value: np.ndarray):
+    payload.array.extend(value.ravel().tolist())
+
+  def unpack(self, payload):
+    # String arrays with variable length strings can't be created with
+    # np.fromiter, unlike other dtypes.
+    return np.array(payload.array, np.str_)
 
 
 # Payload channel name, NumPy representation, packer.
@@ -58,7 +69,7 @@ _RAW_ASSOCIATIONS = (
     ('uint32s', np.uint32, _RepeatedFieldPacker(np.uint32)),
     ('uint64s', np.uint64, _RepeatedFieldPacker(np.uint64)),
     ('bools', np.bool_, _RepeatedFieldPacker(np.bool_)),
-    ('strings', np.str_, _RepeatedFieldPacker(np.str_)),
+    ('strings', np.str_, _RepeatedStringFieldPacker()),
 )
 
 _NAME_TO_NP_TYPE = {

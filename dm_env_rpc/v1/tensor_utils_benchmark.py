@@ -23,7 +23,7 @@ import numpy as np
 
 from dm_env_rpc.v1 import tensor_utils
 
-flags.DEFINE_integer('repeats', 1000,
+flags.DEFINE_integer('repeats', 10000,
                      'Number of times each benchmark will run.')
 FLAGS = flags.FLAGS
 
