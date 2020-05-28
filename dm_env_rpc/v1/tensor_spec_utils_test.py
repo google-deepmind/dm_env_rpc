@@ -20,7 +20,6 @@ import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import tensor_spec_utils
-from dm_env_rpc.v1 import tensor_utils
 
 
 class NpRangeInfoTests(absltest.TestCase):
@@ -45,13 +44,13 @@ class BoundsTests(absltest.TestCase):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((0, 2**32-1), bounds)
+    self.assertEqual((0, 2**32 - 1), bounds)
 
   def test_unbounded_signed(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT32
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((-2**31, 2**31-1), bounds)
+    self.assertEqual((-2**31, 2**31 - 1), bounds)
 
   def test_min_n_shape(self):
     minimum = np.array([[1, 2], [3, 4]])
@@ -97,7 +96,7 @@ class BoundsTests(absltest.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.min.uint32s.array[:] = [1]
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((1, 2**32-1), bounds)
+    self.assertEqual((1, 2**32 - 1), bounds)
 
   def test_max(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
@@ -190,14 +189,14 @@ class BoundsTests(absltest.TestCase):
   def test_max_0_stays_0(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT8
-    tensor_utils._BytesWrapper(tensor_spec.max.int8s, signed=False)[:] = [0]
+    tensor_spec.max.int8s.array = b'\x00'
     tensor_spec.name = 'foo'
     self.assertEqual((-128, 0), tensor_spec_utils.bounds(tensor_spec))
 
   def test_min_0_stays_0(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT8
-    tensor_utils._BytesWrapper(tensor_spec.min.int8s, signed=False)[:] = [0]
+    tensor_spec.min.int8s.array = b'\x00'
     tensor_spec.name = 'foo'
     self.assertEqual((0, 127), tensor_spec_utils.bounds(tensor_spec))
 

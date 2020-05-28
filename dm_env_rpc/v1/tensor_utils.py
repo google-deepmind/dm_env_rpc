@@ -18,62 +18,59 @@ Note that the Tensor proto payload type is not supported, as it doesn't play
 well with NumPy.
 """
 
-import struct
-
 import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 
 
-class _BytesWrapper(object):
-  """Allows protobuf bytes field to be set using the [:] = ... syntax."""
+class _BytesPacker():
 
-  def __init__(self, array, signed):
-    self._array = array
-    self._signed = signed
+  def __init__(self, dtype: np.dtype):
+    self._dtype = dtype
 
-  def __getitem__(self, index):
-    return self._to_scalar(self._array.array[index])
+  def pack(self, payload, value: np.ndarray):
+    payload.array = value.tobytes()
 
-  def __setitem__(self, index, value):
-    if index == slice(None, None, None):
-      self._array.array = struct.pack(
-          str(len(value)) + ('b' if self._signed else 'B'), *value)
-    else:
-      raise ValueError('Unsupported index {}'.format(index))
-
-  def __len__(self):
-    return len(self._array.array)
-
-  def _to_scalar(self, value):
-    return np.int8(value) if self._signed else np.uint8(value)
-
-  def as_np_array(self):
-    return np.frombuffer(
-        self._array.array, dtype=np.int8 if self._signed else np.uint8)
+  def unpack(self, payload):
+    return np.frombuffer(payload.array, self._dtype)
 
 
-# Payload channel name, NumPy representation, and the payload array.
+class _RepeatedFieldPacker():
+
+  def __init__(self, dtype: np.dtype):
+    self._dtype = dtype
+
+  def pack(self, payload, value: np.ndarray):
+    payload.array.extend(value.ravel().tolist())
+
+  def unpack(self, payload):
+    return np.array(payload.array, self._dtype)
+
+
+# Payload channel name, NumPy representation, packer.
 _RAW_ASSOCIATIONS = (
-    ('floats', np.float32, lambda tensor: tensor.floats.array),
-    ('doubles', np.float64, lambda tensor: tensor.doubles.array),
-    ('int8s', np.int8, lambda tensor: _BytesWrapper(tensor.int8s, signed=True)),
-    ('int32s', np.int32, lambda tensor: tensor.int32s.array),
-    ('int64s', np.int64, lambda tensor: tensor.int64s.array),
-    ('uint8s', np.uint8,
-     lambda tensor: _BytesWrapper(tensor.uint8s, signed=False)),
-    ('uint32s', np.uint32, lambda tensor: tensor.uint32s.array),
-    ('uint64s', np.uint64, lambda tensor: tensor.uint64s.array),
-    ('bools', np.bool_, lambda tensor: tensor.bools.array),
-    ('strings', np.str_, lambda tensor: tensor.strings.array),
+    ('floats', np.float32, _RepeatedFieldPacker(np.float32)),
+    ('doubles', np.float64, _RepeatedFieldPacker(np.float64)),
+    ('int8s', np.int8, _BytesPacker(np.int8)),
+    ('int32s', np.int32, _RepeatedFieldPacker(np.int32)),
+    ('int64s', np.int64, _RepeatedFieldPacker(np.int64)),
+    ('uint8s', np.uint8, _BytesPacker(np.uint8)),
+    ('uint32s', np.uint32, _RepeatedFieldPacker(np.uint32)),
+    ('uint64s', np.uint64, _RepeatedFieldPacker(np.uint64)),
+    ('bools', np.bool_, _RepeatedFieldPacker(np.bool_)),
+    ('strings', np.str_, _RepeatedFieldPacker(np.str_)),
 )
 
 _NAME_TO_NP_TYPE = {
-    name: np_type for name, np_type, payload in _RAW_ASSOCIATIONS
+    name: np_type for name, np_type, packer in _RAW_ASSOCIATIONS
 }
 
-_TYPE_TO_PAYLOAD = {
-    np_type: payload for name, np_type, payload in _RAW_ASSOCIATIONS
+_NP_TYPE_TO_NAME = {
+    np_type: name for name, np_type, packer in _RAW_ASSOCIATIONS
+}
+
+_TYPE_TO_PACKER = {
+    np_type: packer for name, np_type, packer in _RAW_ASSOCIATIONS
 }
 
 _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
@@ -107,7 +104,7 @@ def data_type_to_np_type(dm_env_rpc_dtype):
   return np_type
 
 
-def unpack_proto(proto, shape):
+def unpack_proto(proto: dm_env_rpc_pb2.Tensor, shape):
   """Converts a proto with payload oneof to a scalar or NumPy array.
 
   Args:
@@ -121,24 +118,21 @@ def unpack_proto(proto, shape):
     payload with the correct type and shape.
   """
   np_type = get_tensor_type(proto)
-  payload = _TYPE_TO_PAYLOAD[np_type](proto)
+  packer = _TYPE_TO_PACKER[np_type]
+  array = packer.unpack(_get_payload(proto))
   if shape:
-    if len(payload) == 1:
-      array = np.full(np.maximum(shape, 1), payload[0])
+    if len(array) == 1:
+      array = np.full(np.maximum(shape, 1), array[0])
     else:
-      if isinstance(payload, _BytesWrapper):
-        array = payload.as_np_array()
-      else:
-        array = np.array(payload, np_type)
       array.shape = shape
     return array
   else:
-    length = len(payload)
+    length = len(array)
     if length != 1:
       raise ValueError(
           'Scalar tensors must have exactly 1 element but had {} elements.'
           .format(length))
-    return np_type(payload[0])
+    return np_type(array[0])
 
 
 def unpack_tensor(tensor_proto):
@@ -190,10 +184,15 @@ def pack_tensor(value, dtype=None, try_compress=False):
         copy=False,
         casting='same_kind')
   packed.shape[:] = value.shape
-  pack_target = _TYPE_TO_PAYLOAD[value.dtype.type](packed)
+  payload = getattr(packed, _NP_TYPE_TO_NAME[value.dtype.type])
+  packer = _TYPE_TO_PACKER[value.dtype.type]
   if (try_compress and np.all(value == next(value.flat))):
     # All elements are the same.  Pack in to a single value.
-    pack_target[:] = [next(value.flat)]
+    packer.pack(payload, value.ravel()[0:1])
   else:
-    pack_target[:] = np.ravel(value).tolist()
+    packer.pack(payload, value)
   return packed
+
+
+def _get_payload(proto: dm_env_rpc_pb2.Tensor):
+  return getattr(proto, proto.WhichOneof('payload'))

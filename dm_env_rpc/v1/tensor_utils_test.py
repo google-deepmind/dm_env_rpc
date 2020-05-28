@@ -238,7 +238,7 @@ class UnpackTensorTests(parameterized.TestCase):
 
   def test_unsigned_integer_broadcasts_1_element_to_all_elements(self):
     tensor = dm_env_rpc_pb2.Tensor()
-    tensor_utils._BytesWrapper(tensor.uint8s, signed=False)[:] = [1]
+    tensor.uint8s.array = b'\x01'
     tensor.shape[:] = [4]
     unpacked = tensor_utils.unpack_tensor(tensor)
     expected = np.array([1, 1, 1, 1], dtype=np.uint8)
@@ -331,15 +331,6 @@ class GetTensorSpecTypeTests(absltest.TestCase):
   def test_unknown_type(self):
     with self.assertRaises(TypeError):
       tensor_utils.data_type_to_np_type(30)
-
-
-class BytesWrapperTests(absltest.TestCase):
-
-  def test_unsupported_indexing_on_write_raises_error(self):
-    tensor = dm_env_rpc_pb2.Tensor()
-    wrapper = tensor_utils._BytesWrapper(tensor.uint8s, signed=False)
-    with self.assertRaisesRegex(ValueError, 'index'):
-      wrapper[0] = 0
 
 
 if __name__ == '__main__':
