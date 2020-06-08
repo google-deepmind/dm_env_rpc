@@ -121,7 +121,9 @@ part will produce a 2-tensor that looks like:
 
 A `TensorSpec` provides metadata about a tensor, such as its name, type, and
 expected shape. Tensor names must be unique within a given domain (action or
-observation) so clients can use them as keys.
+observation) so clients can use them as keys. A period "." character in a Tensor
+name indicates a level of nesting. See
+[Nested actions/observations](#nested-actions-or-observations) for more details.
 
 #### Ranges
 
@@ -180,19 +182,16 @@ properly diagnose the problem. Any additional relevant information about the
 error that would normally be logged by the server should also be included in the
 error sent to the client.
 
-### Nested actions/observations
+### Nested actions or observations
 
-Nested actions or observations (lists of lists, dicts of dicts, lists of
-objects, etc.) are not directly supported by the protocol, however there are two
-ways they can be handled:
+Nested actions or observations are not directly supported by the protocol,
+however there are two ways they can be handled:
 
-1.  Flattening the hierarchy. A separation character such as a period "." in the
-    name of a spec can indicate a level of nesting. With this a server can
-    flatten the nested structure to push through the wire and the client can
-    reconstruct a nested structure on its side. A tensor name that’s a level of
-    nesting plus a number can indicate an array index. Eg: “wheel.0”, “wheel.1”,
-    “wheel.2” could represent an array of 3 wheels, each element of which is a
-    tensor. An exact scheme is up to each server and should be documented.
+1.  Flattening the hierarchy, using a period "." character to indicate a level
+    of nesting. Servers can flatten the nested structure to push through the
+    wire and the client can reconstruct the nested structure on its side.
+    Servers need to be careful not to use "." as part of the tensor's name,
+    except to indicate a level of nesting.
 
 2.  Defining a custom proto message type, or using the proto common type Struct,
     and setting it as the payload in a Tensor message’s array field.

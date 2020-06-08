@@ -20,6 +20,7 @@ from dm_env import specs
 import mock
 import numpy as np
 
+from google.protobuf import text_format
 from dm_env_rpc.v1 import dm_env_adaptor
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import tensor_utils
@@ -62,6 +63,23 @@ _SAMPLE_SPEC_REORDERED = dm_env_rpc_pb2.ActionObservationSpecs(
         1: dm_env_rpc_pb2.TensorSpec(dtype=dm_env_rpc_pb2.UINT8, name='foo')
     },
 )
+_SAMPLE_NESTED_SPECS = dm_env_rpc_pb2.ActionObservationSpecs(
+    actions={
+        1:
+            dm_env_rpc_pb2.TensorSpec(
+                dtype=dm_env_rpc_pb2.INT32, name='foo.bar'),
+        2:
+            dm_env_rpc_pb2.TensorSpec(dtype=dm_env_rpc_pb2.STRING, name='baz')
+    },
+    observations={
+        1:
+            dm_env_rpc_pb2.TensorSpec(
+                dtype=dm_env_rpc_pb2.INT32, name='foo.bar'),
+        2:
+            dm_env_rpc_pb2.TensorSpec(dtype=dm_env_rpc_pb2.STRING, name='baz')
+    },
+)
+
 # Ensures the equality check in reset() works if the dictionary elements are
 # created in a different order.
 _SAMPLE_RESET_RESPONSE = dm_env_rpc_pb2.ResetResponse(
@@ -341,6 +359,101 @@ class EnvironmentAutomaticallyRequestsReservedKeywords(absltest.TestCase):
     timestep = self._env.step({})
     self.assertEqual('goodbye', timestep.discount)
 
+
+class EnvironmentNestedActionsObservations(absltest.TestCase):
+
+  def test_nested_specs(self):
+    env = dm_env_adaptor.DmEnvAdaptor(
+        connection=mock.MagicMock(), specs=_SAMPLE_NESTED_SPECS)
+    expected_actions = {
+        'foo': {
+            'bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
+        },
+        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+    }
+    expected_observations = {
+        'foo': {
+            'bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
+        },
+        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+    }
+
+    self.assertSameElements(expected_actions, env.action_spec())
+    self.assertSameElements(expected_observations, env.observation_spec())
+
+  def test_no_nested_specs(self):
+    env = dm_env_adaptor.DmEnvAdaptor(
+        connection=mock.MagicMock(),
+        specs=_SAMPLE_NESTED_SPECS,
+        nested_tensors=False)
+    expected_actions = {
+        'foo.bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
+        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+    }
+    expected_observations = {
+        'foo.bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
+        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+    }
+
+    self.assertSameElements(expected_actions, env.action_spec())
+    self.assertSameElements(expected_observations, env.observation_spec())
+
+  def test_nested_actions_step(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(
+        return_value=text_format.Parse("""state: RUNNING""",
+                                       dm_env_rpc_pb2.StepResponse()))
+    env = dm_env_adaptor.DmEnvAdaptor(
+        connection, specs=_SAMPLE_NESTED_SPECS, requested_observations=[])
+
+    timestep = env.step({'foo': {'bar': 123}})
+
+    self.assertEqual(dm_env.StepType.FIRST, timestep.step_type)
+
+    connection.send.assert_called_once_with(
+        text_format.Parse(
+            """actions: { key: 1, value: { int32s: { array: 123 } } }""",
+            dm_env_rpc_pb2.StepRequest()))
+
+  def test_no_nested_actions_step(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(
+        return_value=text_format.Parse("""state: RUNNING""",
+                                       dm_env_rpc_pb2.StepResponse()))
+    env = dm_env_adaptor.DmEnvAdaptor(
+        connection,
+        specs=_SAMPLE_NESTED_SPECS,
+        requested_observations=[],
+        nested_tensors=False)
+    timestep = env.step({'foo.bar': 123})
+
+    self.assertEqual(dm_env.StepType.FIRST, timestep.step_type)
+
+    connection.send.assert_called_once_with(
+        text_format.Parse(
+            """actions: { key: 1, value: { int32s: { array: 123 } } }""",
+            dm_env_rpc_pb2.StepRequest()))
+
+  def test_nested_observations_step(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(
+        return_value=text_format.Parse(
+            """state: RUNNING
+        observations: { key: 1, value: { int32s: { array: 42 } } }""",
+            dm_env_rpc_pb2.StepResponse()))
+
+    expected = {'foo': {'bar': 42}}
+
+    env = dm_env_adaptor.DmEnvAdaptor(
+        connection,
+        specs=_SAMPLE_NESTED_SPECS,
+        requested_observations=['foo.bar'])
+    timestep = env.step({})
+    self.assertEqual(dm_env.StepType.FIRST, timestep.step_type)
+    self.assertSameElements(expected, timestep.observation)
+
+    connection.send.assert_called_once_with(
+        dm_env_rpc_pb2.StepRequest(requested_observations=[1]))
 
 if __name__ == '__main__':
   absltest.main()

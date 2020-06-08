@@ -16,6 +16,7 @@
 
 import dm_env
 
+from dm_env_rpc.v1 import dm_env_flatten_utils
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_utils
 from dm_env_rpc.v1 import spec_manager
@@ -26,26 +27,35 @@ from dm_env_rpc.v1 import spec_manager
 DEFAULT_REWARD_KEY = 'reward'
 DEFAULT_DISCOUNT_KEY = 'discount'
 
+# Default key separator, used in flattening/unflattening nested structures.
+DEFAULT_KEY_SEPARATOR = '.'
+
 
 class DmEnvAdaptor(dm_env.Environment):
   """An implementation of dm_env using dm_env_rpc as the data protocol."""
 
-  def __init__(self, connection, specs, requested_observations=None):
+  def __init__(self,
+               connection,
+               specs,
+               requested_observations=None,
+               nested_tensors=True):
     """Initializes the environment with the provided dm_env_rpc connection.
 
     Args:
       connection: An instance of Connection already connected to a dm_env_rpc
         server and after a successful JoinWorldRequest has been sent.
       specs: A dm_env_rpc ActionObservationSpecs message for the environment.
-      requested_observations: The observation names to be requested from the
+      requested_observations: List of observation names to be requested from the
         environment when step is called. If None is specified then all
         observations will be requested.
+      nested_tensors: Boolean to determine whether to flatten/unflatten tensors.
     """
     self._dm_env_rpc_specs = specs
     self._action_specs = spec_manager.SpecManager(specs.actions)
     self._observation_specs = spec_manager.SpecManager(specs.observations)
     self._connection = connection
     self._last_state = dm_env_rpc_pb2.EnvironmentStateType.TERMINATED
+    self._nested_tensors = nested_tensors
 
     if requested_observations is None:
       requested_observations = self._observation_specs.names()
@@ -89,6 +99,8 @@ class DmEnvAdaptor(dm_env.Environment):
 
   def step(self, actions):
     """Implements dm_env.Environment.step."""
+    actions = dm_env_flatten_utils.flatten_dict(
+        actions, DEFAULT_KEY_SEPARATOR) if self._nested_tensors else actions
     step_response = self._connection.send(
         dm_env_rpc_pb2.StepRequest(
             requested_observations=self._requested_observation_uids,
@@ -121,6 +133,9 @@ class DmEnvAdaptor(dm_env.Environment):
       observations.pop(DEFAULT_REWARD_KEY, None)
     if not self._is_discount_requested:
       observations.pop(DEFAULT_DISCOUNT_KEY, None)
+    observations = dm_env_flatten_utils.unflatten_dict(
+        observations,
+        DEFAULT_KEY_SEPARATOR) if self._nested_tensors else observations
     return dm_env.TimeStep(step_type, reward, discount, observations)
 
   def reward(self, state, step_type, observations):
@@ -183,11 +198,20 @@ class DmEnvAdaptor(dm_env.Environment):
       specs.pop(DEFAULT_REWARD_KEY, None)
     if not self._is_discount_requested:
       specs.pop(DEFAULT_DISCOUNT_KEY, None)
-    return specs
+
+    if self._nested_tensors:
+      return dm_env_flatten_utils.unflatten_dict(specs, DEFAULT_KEY_SEPARATOR)
+    else:
+      return specs
 
   def action_spec(self):
     """Implements dm_env.Environment.action_spec."""
-    return dm_env_utils.dm_env_spec(self._action_specs)
+    action_spec = dm_env_utils.dm_env_spec(self._action_specs)
+    if self._nested_tensors:
+      return dm_env_flatten_utils.unflatten_dict(action_spec,
+                                                 DEFAULT_KEY_SEPARATOR)
+    else:
+      return action_spec
 
   def reward_spec(self):
     """Implements dm_env.Environment.reward_spec."""

@@ -134,8 +134,11 @@ TensorSpec {
 }
 ```
 
+The use of a period "." character allows clients to reconstruct a hierarchy,
+which can be useful in grouping tensors into logical categories.
+
 If a structure of arrays format is infeasible, custom protocol messages can be
-implemented as a final option. This allows a more natural data representation,
+implemented as an alternative. This allows a more natural data representation,
 but requires the client to also compile the protocol buffers and makes discovery
 of metadata, such as range for numeric types, more difficult. For our toy
 example, we could form the data in to this intermediate protocol buffer format:
@@ -155,19 +158,20 @@ message Character {
   Vector3 position = 1;
   string name = 2;
 }
-
-message Data {
-  repeated HealthPickup pickups = 1;
-  repeated Character characters = 2;
-}
 ```
 
 The `TensorSpec` would then look like:
 
 ```
 TensorSpec {
-  name = "Data",
-  shape = [],
+  name = "Characters",
+  shape = [-1],
+  dtype = proto
+},
+
+TensorSpec {
+  name = "HealthPickups",
+  shape = [-1],
   dtype = proto
 },
 ```
