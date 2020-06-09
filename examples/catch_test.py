@@ -36,7 +36,7 @@ def _local_address(port):
   return '[::1]:{}'.format(port)
 
 
-class ServerConnection(object):
+class ServerConnection:
 
   def __init__(self):
     port = portpicker.pick_unused_port()
@@ -53,8 +53,23 @@ class ServerConnection(object):
     grpc.channel_ready_future(self._channel).result()
 
     self.connection = dm_env_rpc_connection.Connection(self._channel)
+
+  def close(self):
+    self.connection.close()
+    self._channel.close()
+    self._server.stop(None)
+
+
+class JoinedServerConnection(ServerConnection):
+
+  def __init__(self):
+    super().__init__()
     response = self.connection.send(dm_env_rpc_pb2.CreateWorldRequest())
     self.world_name = response.world_name
+
+    response = self.connection.send(dm_env_rpc_pb2.JoinWorldRequest(
+        world_name=self.world_name))
+    self.specs = response.specs
 
   def close(self):
     try:
@@ -62,12 +77,10 @@ class ServerConnection(object):
       self.connection.send(
           dm_env_rpc_pb2.DestroyWorldRequest(world_name=self.world_name))
     finally:
-      self.connection.close()
-      self._channel.close()
-      self._server.stop(None)
+      super().close()
 
 
-class CatchDmEnvRpcTest(compliance.StepComplianceTestCase):
+class CatchDmEnvRpcStepTest(compliance.StepComplianceTestCase):
 
   @property
   def connection(self):
@@ -75,14 +88,41 @@ class CatchDmEnvRpcTest(compliance.StepComplianceTestCase):
 
   @property
   def specs(self):
-    return self._specs
+    return self._server_connection.specs
+
+  def setUp(self):
+    super().setUp()
+    self._server_connection = JoinedServerConnection()
+
+  def tearDown(self):
+    self._server_connection.close()
+    super().tearDown()
+
+
+class CatchDmEnvRpcCreateAndDestoryWorldTest(
+    compliance.CreateAndDestroyWorldComplianceTestCase):
+
+  @property
+  def connection(self):
+    return self._server_connection.connection
+
+  @property
+  def required_world_settings(self):
+    """A string to Tensor mapping of the minimum set of required settings."""
+    return {}
+
+  @property
+  def invalid_world_settings(self):
+    """World creation settings which are invalid in some way."""
+    return {}
+
+  @property
+  def has_multiple_world_support(self):
+    """Does the server support creating more than one world?"""
+    return False
 
   def setUp(self):
     self._server_connection = ServerConnection()
-
-    response = self.connection.send(dm_env_rpc_pb2.JoinWorldRequest(
-        world_name=self._server_connection.world_name))
-    self._specs = response.specs
     super().setUp()
 
   def tearDown(self):
@@ -93,13 +133,12 @@ class CatchDmEnvRpcTest(compliance.StepComplianceTestCase):
 class CatchDmEnvTest(test_utils.EnvironmentTestMixin, absltest.TestCase):
 
   def setUp(self):
-    self._server_connection = ServerConnection()
+    self._server_connection = JoinedServerConnection()
     self._connection = self._server_connection.connection
+    self.world_name = self._server_connection.world_name
 
-    request = dm_env_rpc_pb2.JoinWorldRequest(
-        world_name=self._server_connection.world_name)
-    specs = self._connection.send(request).specs
-    self._dm_env = dm_env_adaptor.DmEnvAdaptor(self._connection, specs)
+    self._dm_env = dm_env_adaptor.DmEnvAdaptor(
+        self._connection, self._server_connection.specs)
     super().setUp()
 
   def tearDown(self):
@@ -117,10 +156,17 @@ class CatchTest(absltest.TestCase):
 
     self._server_connection = ServerConnection()
     self._connection = self._server_connection.connection
-    self._world_name = self._server_connection.world_name
+
+    response = self._connection.send(dm_env_rpc_pb2.CreateWorldRequest())
+    self._world_name = response.world_name
 
   def tearDown(self):
-    self._server_connection.close()
+    try:
+      self._connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
+      self._connection.send(
+          dm_env_rpc_pb2.DestroyWorldRequest(world_name=self._world_name))
+    finally:
+      self._server_connection.close()
     super().tearDown()
 
   def test_can_reset_world_when_joined(self):
