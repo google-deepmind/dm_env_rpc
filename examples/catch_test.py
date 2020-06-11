@@ -80,7 +80,7 @@ class JoinedServerConnection(ServerConnection):
       super().close()
 
 
-class CatchDmEnvRpcStepTest(compliance.StepComplianceTestCase):
+class CatchDmEnvRpcStepTest(compliance.Step):
 
   @property
   def connection(self):
@@ -99,8 +99,7 @@ class CatchDmEnvRpcStepTest(compliance.StepComplianceTestCase):
     super().tearDown()
 
 
-class CatchDmEnvRpcCreateAndDestoryWorldTest(
-    compliance.CreateAndDestroyWorldComplianceTestCase):
+class CatchDmEnvRpcCreateAndDestoryWorldTest(compliance.CreateDestroyWorld):
 
   @property
   def connection(self):
