@@ -14,10 +14,10 @@
 # ============================================================================
 """Install script for setuptools."""
 
-import importlib.machinery
+from distutils import cmd
+import importlib.util
 import os
 
-from distutils.cmd import Command
 import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
@@ -35,7 +35,7 @@ _DM_ENV_RPC_PROTOS = ('dm_env_rpc/v1/dm_env_rpc.proto',
                       'dm_env_rpc/v1/extensions/properties.proto')
 
 
-class _GenerateProtoFiles(Command):
+class _GenerateProtoFiles(cmd.Command):
   """Command to generate protobuf bindings for dm_env_rpc.proto."""
 
   descriptions = 'Generates Python protobuf bindings for dm_env_rpc.proto.'
@@ -95,8 +95,9 @@ class _BuildPy(build_py):
 
 setup(
     name='dm-env-rpc',
-    version=importlib.machinery.SourceFileLoader(
-        '_version', 'dm_env_rpc/_version.py').load_module().__version__,
+    version=importlib.util.module_from_spec(
+        importlib.util.spec_from_file_location(
+            '_version', 'dm_env_rpc/_version.py')),
     description='A networking protocol for agent-environment communication.',
     author='DeepMind',
     license='Apache License, Version 2.0',
@@ -134,7 +135,6 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: MacOS :: MacOS X',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
