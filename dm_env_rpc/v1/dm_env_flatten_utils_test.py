@@ -81,7 +81,7 @@ class FlattenUtilsTest(absltest.TestCase):
             dm_env_flatten_utils.flatten_dict(input_output, '.'), '.'))
 
   def test_flatten_with_key_containing_separator_raises_error(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaisesRegex(ValueError, 'foo.bar'):
       dm_env_flatten_utils.flatten_dict({'foo.bar': True}, '.')
 
   def test_invalid_flattened_dict_raises_error(self):

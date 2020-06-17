@@ -40,10 +40,10 @@ def flatten_dict(input_dict: Mapping[str, Any],
   result = collections.OrderedDict()
   for key, value in input_dict.items():
     if separator in key:
-      raise ValueError('Key {} already contains separator!'.format(key))
+      raise ValueError(f"Key '{key}' already contains separator!")
     if isinstance(value, Mapping) and len(value):
       result.update({
-          separator.join((key, sub_key)): sub_value
+          f'{key}{separator}{sub_key}': sub_value
           for sub_key, sub_value in flatten_dict(value, separator).items()
       })
     else:
@@ -77,11 +77,10 @@ def unflatten_dict(input_dict: Mapping[str, Any],
     for sub_key in sub_keys[:-1]:
       sub_tree = sub_tree.setdefault(sub_key, {})
       if not isinstance(sub_tree, Mapping):
-        raise ValueError(
-            "Sub-tree '{name}' has already been assigned a leaf value {value}"
-            .format(name=sub_key, value=sub_tree))
+        raise ValueError(f"Sub-tree '{sub_key}' has already been assigned a "
+                         "leaf value {sub_tree}")
 
     if sub_keys[-1] in sub_tree:
-      raise ValueError('Duplicate key {}'.format(key))
+      raise ValueError(f'Duplicate key {key}')
     sub_tree[sub_keys[-1]] = value
   return result
