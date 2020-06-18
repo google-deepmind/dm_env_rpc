@@ -129,6 +129,31 @@ class CatchDmEnvRpcCreateAndDestoryWorldTest(compliance.CreateDestroyWorld):
     self._server_connection.close()
 
 
+class CatchDmEnvRpcJoinAndLeaveWorldTest(compliance.JoinLeaveWorld):
+
+  @property
+  def connection(self):
+    return self._server_connection.connection
+
+  @property
+  def world_name(self):
+    return self._world_name
+
+  def setUp(self):
+    self._server_connection = ServerConnection()
+    response = self.connection.send(dm_env_rpc_pb2.CreateWorldRequest())
+    self._world_name = response.world_name
+    super().setUp()
+
+  def tearDown(self):
+    super().tearDown()
+    try:
+      self.connection.send(
+          dm_env_rpc_pb2.DestroyWorldRequest(world_name=self.world_name))
+    finally:
+      self._server_connection.close()
+
+
 class CatchDmEnvTest(test_utils.EnvironmentTestMixin, absltest.TestCase):
 
   def setUp(self):

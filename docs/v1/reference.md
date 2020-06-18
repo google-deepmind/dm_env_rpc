@@ -85,7 +85,8 @@ other agents joining the world or synchronizing with some external event.
 The `world_name` specifies which world to join. Only one world may be joined at
 a time per client connection. If an agent wants to join multiple worlds at the
 same time, or join the same world as multiple agents, it will have to manage
-each over a different connection.
+each over a different connection. As such, a server should return an error if a
+client attempts to join a world when already joined to one.
 
 #### Specs
 

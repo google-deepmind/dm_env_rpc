@@ -188,10 +188,14 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
           skip_next_frame = True
           response = dm_env_rpc_pb2.CreateWorldResponse(world_name=_WORLD_NAME)
         elif message_type == 'join_world':
+          if is_joined:
+            raise RuntimeError(
+                f'Tried to join world "{internal_request.world_name}" but '
+                f'already joined to world "{_WORLD_NAME}"')
           if internal_request.world_name != _WORLD_NAME:
             raise RuntimeError(
-                'Tried to join world "{}" but only support world "{}"'.format(
-                    internal_request.world_name, _WORLD_NAME))
+                f'Tried to join world "{internal_request.world_name}" but the '
+                f'only supported world is "{_WORLD_NAME}"')
           response = dm_env_rpc_pb2.JoinWorldResponse()
           for uid, action in _action_spec().items():
             response.specs.actions[uid].CopyFrom(action)
