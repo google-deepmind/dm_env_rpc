@@ -152,8 +152,8 @@ class DmEnvAdaptorTests(absltest.TestCase):
 
     self._connection.send.assert_called_once_with(_SAMPLE_STEP_REQUEST)
     self.assertEqual(dm_env.StepType.FIRST, timestep.step_type)
-    self.assertEqual(None, timestep.reward)
-    self.assertEqual(None, timestep.discount)
+    self.assertIsNone(timestep.reward)
+    self.assertIsNone(timestep.discount)
     self.assertEqual({'foo': 5, 'bar': 'goodbye'}, timestep.observation)
 
   def test_mid_running_step(self):
@@ -195,8 +195,8 @@ class DmEnvAdaptorTests(absltest.TestCase):
     timestep = self._env.reset()
 
     self.assertEqual(dm_env.StepType.FIRST, timestep.step_type)
-    self.assertEqual(None, timestep.reward)
-    self.assertEqual(None, timestep.discount)
+    self.assertIsNone(timestep.reward)
+    self.assertIsNone(timestep.discount)
     self.assertEqual({'foo': 5, 'bar': 'goodbye'}, timestep.observation)
 
   def test_reset_changes_spec_raises_error(self):
