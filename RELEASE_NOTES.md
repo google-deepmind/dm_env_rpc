@@ -1,5 +1,16 @@
 # Release Notes
 
+## [1.0.2]
+
+*   Explicitly support nested tensors by the use of a period character in the
+    `TensorSpec` name to indicate a level of nesting. Updated `dm_env` adaptor
+    to flatten/unflattten actions and observations.
+*   Increased minimum Python version to 3.6.
+*   Moved property request/responses to its own extension. This supercedes the
+    previous property requests, which have been marked as deprecated. **These
+    requests will be removed in a future version of dm_env_rpc**.
+*   Speed improvements for packing and un-packing byte arrays in Python.
+
 ## [1.0.1]
 
 ### Added
