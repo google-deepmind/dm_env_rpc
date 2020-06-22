@@ -20,9 +20,11 @@ from dm_env import specs
 import mock
 import numpy as np
 
+from google.rpc import status_pb2
 from google.protobuf import text_format
 from dm_env_rpc.v1 import dm_env_adaptor
 from dm_env_rpc.v1 import dm_env_rpc_pb2
+from dm_env_rpc.v1 import error
 from dm_env_rpc.v1 import tensor_utils
 
 _SAMPLE_STEP_REQUEST = dm_env_rpc_pb2.StepRequest(
@@ -454,6 +456,77 @@ class EnvironmentNestedActionsObservations(absltest.TestCase):
 
     connection.send.assert_called_once_with(
         dm_env_rpc_pb2.StepRequest(requested_observations=[1]))
+
+
+class CreateJoinHelpers(absltest.TestCase):
+
+  def test_join_world(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(
+        return_value=dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_SPEC))
+
+    env = dm_env_adaptor.join_world(connection, 'Damogran_01',
+                                    {'player': 'zaphod'})
+    self.assertIsNotNone(env)
+
+    connection.send.assert_called_once_with(
+        text_format.Parse(
+            """world_name: 'Damogran_01'
+                settings: {
+                    key: 'player', value: { strings: { array: 'zaphod' } }
+                }""", dm_env_rpc_pb2.JoinWorldRequest()))
+
+  def test_create_join_world(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(side_effect=[
+        dm_env_rpc_pb2.CreateWorldResponse(world_name='Damogran_01'),
+        dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_SPEC)
+    ])
+    env, world_name = dm_env_adaptor.create_and_join_world(
+        connection,
+        create_world_settings={'planet': 'Damogran'},
+        join_world_settings={
+            'ship_type': 1,
+            'player': 'zaphod',
+        })
+    self.assertIsNotNone(env)
+    self.assertEqual('Damogran_01', world_name)
+
+    connection.send.assert_has_calls([
+        mock.call(
+            text_format.Parse(
+                """settings: {
+                key: 'planet', value: { strings: { array: 'Damogran' } }
+            }""", dm_env_rpc_pb2.CreateWorldRequest())),
+        mock.call(
+            text_format.Parse(
+                """world_name: 'Damogran_01'
+                settings: { key: 'ship_type', value: { int64s: { array: 1 } } }
+                settings: {
+                    key: 'player', value: { strings: { array: 'zaphod' } }
+                }""", dm_env_rpc_pb2.JoinWorldRequest())),
+    ])
+
+  def test_created_but_failed_to_join_world(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(
+        side_effect=(
+            dm_env_rpc_pb2.CreateWorldResponse(world_name='Damogran_01'),
+            error.DmEnvRpcError(status_pb2.Status(message='Failed to Join.')),
+            dm_env_rpc_pb2.LeaveWorldResponse(),
+            dm_env_rpc_pb2.DestroyWorldResponse()))
+
+    with self.assertRaisesRegex(error.DmEnvRpcError, 'Failed to Join'):
+      _ = dm_env_adaptor.create_and_join_world(
+          connection, create_world_settings={}, join_world_settings={})
+
+    connection.send.assert_has_calls([
+        mock.call(dm_env_rpc_pb2.CreateWorldRequest()),
+        mock.call(dm_env_rpc_pb2.JoinWorldRequest(world_name='Damogran_01')),
+        mock.call(dm_env_rpc_pb2.LeaveWorldRequest()),
+        mock.call(dm_env_rpc_pb2.DestroyWorldRequest(world_name='Damogran_01'))
+    ])
+
 
 if __name__ == '__main__':
   absltest.main()

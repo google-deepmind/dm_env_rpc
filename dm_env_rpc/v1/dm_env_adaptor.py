@@ -14,12 +14,17 @@
 # ============================================================================
 """An implementation of a dm_env environment using dm_env_rpc."""
 
+import collections
+from typing import Any, Iterable, Mapping, Optional, Tuple
 import dm_env
 
+from dm_env_rpc.v1 import connection as dm_env_rpc_connection
 from dm_env_rpc.v1 import dm_env_flatten_utils
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_utils
+from dm_env_rpc.v1 import error
 from dm_env_rpc.v1 import spec_manager
+from dm_env_rpc.v1 import tensor_utils
 
 # Default observation names for common RL concepts.  By default the dm_env
 # wrapper will use these for reward and discount if available, but this behavior
@@ -228,3 +233,75 @@ class DmEnvAdaptor(dm_env.Environment):
     # Leaves the world if we were joined.  If not, this will be a no-op anyway.
     self._connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
     self._connection = None
+
+
+def join_world(
+    connection: dm_env_rpc_connection.Connection,
+    world_name: str,
+    join_world_settings: Mapping[str, Any],
+    requested_observations: Optional[Iterable[str]] = None
+) -> DmEnvAdaptor:
+  """Helper function to join a world with the provided settings.
+
+  Args:
+    connection: An instance of Connection already connected to a dm_env_rpc
+      server.
+    world_name: Name of the world to join.
+    join_world_settings: Settings used to join the world. Values must be
+      packable into a Tensor message.
+    requested_observations: Optional set of requested observations.
+
+  Returns:
+    Instance of DmEnvAdaptor.
+  """
+
+  join_world_settings = {
+      key: tensor_utils.pack_tensor(value)
+      for key, value in join_world_settings.items()
+  }
+  try:
+    specs = connection.send(
+        dm_env_rpc_pb2.JoinWorldRequest(
+            world_name=world_name, settings=join_world_settings)).specs
+    return DmEnvAdaptor(connection, specs, requested_observations)
+  except error.DmEnvRpcError:
+    connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
+    raise
+
+
+def create_and_join_world(
+    connection: dm_env_rpc_connection.Connection,
+    create_world_settings: Mapping[str, Any],
+    join_world_settings: Mapping[str, Any],
+    requested_observations: Optional[Iterable[str]] = None
+) -> Tuple[DmEnvAdaptor, str]:
+  """Helper function to create and join a world with the provided settings.
+
+  Args:
+    connection: An instance of Connection already connected to a dm_env_rpc
+      server.
+    create_world_settings: Settings used to create the world. Values must be
+      packable into a Tensor proto.
+    join_world_settings: Settings used to join the world. Values must be
+      packable into a Tensor message.
+    requested_observations: Optional set of requested observations.
+
+  Returns:
+    Tuple of DmEnvAdaptor and the created world name.
+  """
+  create_world_settings = {
+      key: tensor_utils.pack_tensor(value)
+      for key, value in create_world_settings.items()
+  }
+  world_name = connection.send(
+      dm_env_rpc_pb2.CreateWorldRequest(
+          settings=create_world_settings)).world_name
+  try:
+    return_type = collections.namedtuple('DmEnvAndWorldName',
+                                         ['env', 'world_name'])
+    return return_type(
+        join_world(connection, world_name, join_world_settings,
+                   requested_observations), world_name)
+  except error.DmEnvRpcError:
+    connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
+    raise
