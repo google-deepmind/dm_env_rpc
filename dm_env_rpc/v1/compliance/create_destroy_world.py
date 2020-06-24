@@ -42,7 +42,7 @@ class CreateDestroyWorld(absltest.TestCase, metaclass=abc.ABCMeta):
 
   @abc.abstractproperty
   def connection(self):
-    """An instance of dm_env_rpc's Connection already joined to a world."""
+    """An instance of dm_env_rpc's Connection."""
     pass
 
   def create_world(self, settings):

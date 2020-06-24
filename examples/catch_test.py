@@ -149,6 +149,38 @@ class CatchDmEnvRpcJoinAndLeaveWorldTest(compliance.JoinLeaveWorld):
       self._server_connection.close()
 
 
+class CatchDmEnvRpcResetTest(compliance.Reset):
+
+  @property
+  def connection(self):
+    return self._server_connection.connection
+
+  def join_world(self):
+    """Joins a world, returning the specs."""
+    response = self.connection.send(dm_env_rpc_pb2.JoinWorldRequest(
+        world_name=self.world_name))
+    return response.specs
+
+  @property
+  def world_name(self):
+    return self._world_name
+
+  def setUp(self):
+    self._server_connection = ServerConnection()
+    response = self.connection.send(dm_env_rpc_pb2.CreateWorldRequest())
+    self._world_name = response.world_name
+    super().setUp()
+
+  def tearDown(self):
+    super().tearDown()
+    try:
+      self.connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
+      self.connection.send(
+          dm_env_rpc_pb2.DestroyWorldRequest(world_name=self.world_name))
+    finally:
+      self._server_connection.close()
+
+
 class CatchDmEnvTest(test_utils.EnvironmentTestMixin, absltest.TestCase):
 
   def setUp(self):
