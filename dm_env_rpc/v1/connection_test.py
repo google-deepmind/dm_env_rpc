@@ -14,9 +14,11 @@
 # ============================================================================
 """Tests for Connection."""
 
+from concurrent import futures
 import contextlib
 
 from absl.testing import absltest
+import grpc
 import mock
 
 from google.protobuf import any_pb2
@@ -100,6 +102,21 @@ class ConnectionTests(absltest.TestCase):
         expected_response = any_pb2.Any()
         expected_response.Pack(_EXTENSION_RESPONSE)
         self.assertEqual(expected_response, response)
+
+  def test_create_secure_channel_and_connect(self):
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    port = server.add_secure_port('[::]:0', grpc.local_server_credentials())
+    server.start()
+
+    self.assertIsNotNone(
+        dm_env_rpc_connection.create_secure_channel_and_connect(
+            f'[::]:{port}', grpc.local_channel_credentials()))
+    server.stop(grace=None)
+
+  def test_create_secure_channel_and_connect_timeout(self):
+    with self.assertRaises(grpc.FutureTimeoutError):
+      dm_env_rpc_connection.create_secure_channel_and_connect(
+          'invalid_address', grpc.local_channel_credentials(), timeout=1.)
 
 
 if __name__ == '__main__':

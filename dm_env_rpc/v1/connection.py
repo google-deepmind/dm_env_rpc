@@ -45,6 +45,8 @@ exceptions, so explicit error handling code isn't needed per call.
 """
 
 import queue
+from typing import Optional
+import grpc
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
@@ -126,3 +128,41 @@ class Connection(object):
 
   def __enter__(self):
     return self
+
+
+def create_secure_channel_and_connect(
+    server_address: str,
+    credentials: grpc.ChannelCredentials,
+    timeout: Optional[float] = None) -> Connection:
+  """Creates a secure channel from server address and credentials and connects.
+
+  We allow the created channel to have un-bounded message lengths, to support
+  large observations.
+
+  Args:
+    server_address: URI server address to connect to.
+    credentials: gRPC credentials necessary to connect to the server.
+    timeout: Optional timeout in seconds to wait for channel to be ready.
+      Default to waiting indefinitely.
+
+  Returns:
+    An instance of dm_env_rpc.Connection, where the channel is close upon the
+    connection being closed.
+  """
+  options = [('grpc.max_send_message_length', -1),
+             ('grpc.max_receive_message_length', -1)]
+  channel = grpc.secure_channel(server_address, credentials, options=options)
+  grpc.channel_ready_future(channel).result(timeout)
+
+  class _ConnectionWrapper(Connection):
+    """Utility to ensure channel is closed when the connection is closed."""
+
+    def __init__(self, channel):
+      super().__init__(channel)
+      self._channel = channel
+
+    def close(self):
+      super().close()
+      self._channel.close()
+
+  return _ConnectionWrapper(channel)
