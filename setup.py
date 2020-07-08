@@ -93,11 +93,18 @@ class _BuildPy(build_py):
     build_py.run(self)
 
 
+def _load_version():
+  """Load dm_env_rpc version."""
+  spec = importlib.util.spec_from_file_location('_version',
+                                                'dm_env_rpc/_version.py')
+  version_module = importlib.util.module_from_spec(spec)
+  spec.loader.exec_module(version_module)
+  return version_module.__version__
+
+
 setup(
     name='dm-env-rpc',
-    version=importlib.util.module_from_spec(
-        importlib.util.spec_from_file_location(
-            '_version', 'dm_env_rpc/_version.py')),
+    version=_load_version(),
     description='A networking protocol for agent-environment communication.',
     author='DeepMind',
     license='Apache License, Version 2.0',
