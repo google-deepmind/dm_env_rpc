@@ -14,10 +14,10 @@
 # ============================================================================
 """Example Catch human agent."""
 
-from absl import app
 from concurrent import futures
+
+from absl import app
 import grpc
-import portpicker
 import pygame
 
 import catch_environment
@@ -80,24 +80,23 @@ def _render_window(board, window_surface, reward):
   _draw_row(instructions, num_rows + 5, instructions_font, window_surface)
 
 
-def _start_server(port):
+def _start_server():
   """Starts the Catch gRPC server."""
   server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
   servicer = catch_environment.CatchEnvironmentService()
   dm_env_rpc_pb2_grpc.add_EnvironmentServicer_to_server(servicer, server)
 
-  server.add_insecure_port('localhost:{}'.format(port))
+  port = server.add_secure_port('localhost:0', grpc.local_server_credentials())
   server.start()
-  return server
+  return server, port
 
 
 def main(_):
   pygame.init()
 
-  port = portpicker.pick_unused_port()
-  server = _start_server(port)
+  server, port = _start_server()
 
-  with grpc.secure_channel('localhost:{}'.format(port),
+  with grpc.secure_channel(f'localhost:{port}',
                            grpc.local_channel_credentials()) as channel:
     grpc.channel_ready_future(channel).result()
     with dm_env_rpc_connection.Connection(channel) as connection:

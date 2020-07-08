@@ -121,7 +121,6 @@ setup(
         'absl-py',
         'nose',
         'mock',
-        'portpicker',
     ],
     python_requires='>=3.5',
     setup_requires=['grpcio-tools'],

@@ -21,7 +21,6 @@ from absl.testing import absltest
 from dm_env import test_utils
 import grpc
 import numpy as np
-import portpicker
 
 import catch_environment
 from dm_env_rpc.v1 import compliance
@@ -32,24 +31,20 @@ from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import error
 
 
-def _local_address(port):
-  return '[::1]:{}'.format(port)
-
-
 class ServerConnection:
 
   def __init__(self):
-    port = portpicker.pick_unused_port()
     self._server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=1))
     servicer = catch_environment.CatchEnvironmentService()
     dm_env_rpc_pb2_grpc.add_EnvironmentServicer_to_server(
         servicer, self._server)
-    self._server.add_insecure_port(_local_address(port))
+    port = self._server.add_secure_port('[::]:0',
+                                        grpc.local_server_credentials())
     self._server.start()
 
-    self._channel = grpc.secure_channel(
-        _local_address(port), grpc.local_channel_credentials())
+    self._channel = grpc.secure_channel(f'[::]:{port}',
+                                        grpc.local_channel_credentials())
     grpc.channel_ready_future(self._channel).result()
 
     self.connection = dm_env_rpc_connection.Connection(self._channel)
@@ -57,7 +52,7 @@ class ServerConnection:
   def close(self):
     self.connection.close()
     self._channel.close()
-    self._server.stop(None)
+    self._server.stop(grace=None)
 
 
 class JoinedServerConnection(ServerConnection):
