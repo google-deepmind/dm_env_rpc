@@ -20,9 +20,11 @@ from __future__ import print_function
 from dm_env_rpc.v1.compliance import create_destroy_world
 from dm_env_rpc.v1.compliance import join_leave_world
 from dm_env_rpc.v1.compliance import reset
+from dm_env_rpc.v1.compliance import reset_world
 from dm_env_rpc.v1.compliance import step
 
 CreateDestroyWorld = create_destroy_world.CreateDestroyWorld
 JoinLeaveWorld = join_leave_world.JoinLeaveWorld
-Step = step.Step
 Reset = reset.Reset
+ResetWorld = reset_world.ResetWorld
+Step = step.Step
