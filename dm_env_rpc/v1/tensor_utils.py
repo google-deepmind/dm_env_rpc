@@ -97,13 +97,18 @@ _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
     dm_env_rpc_pb2.DataType.STRING: np.str_,
 }
 
+_NUMPY_DTYPE_TO_DM_ENV_RPC_DTYPE = {
+    value: key
+    for key, value in _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.items()
+}
+
 
 def get_tensor_type(tensor_proto):
   """Returns the NumPy type for the given tensor."""
   payload = tensor_proto.WhichOneof('payload')
   np_type = _NAME_TO_NP_TYPE.get(payload)
   if not np_type:
-    raise TypeError('Unknown type {}'.format(payload))
+    raise TypeError(f'Unknown type {payload}')
   return np_type
 
 
@@ -111,8 +116,21 @@ def data_type_to_np_type(dm_env_rpc_dtype):
   """Returns the NumPy type for the given dm_env_rpc DataType."""
   np_type = _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dm_env_rpc_dtype)
   if not np_type:
-    raise TypeError('Unknown type {}'.format(dm_env_rpc_dtype))
+    raise TypeError(f'Unknown type {dm_env_rpc_dtype}')
   return np_type
+
+
+def np_type_to_data_type(np_type):
+  """Returns the dm_env_rpc DataType for the given NumPy type."""
+  if isinstance(np_type, np.dtype):
+    # Flatten scalar types, since np.int32 is different from np.dtype(np.int32)
+    # for dict key lookup.
+    np_type = np_type.type
+  data_type = _NUMPY_DTYPE_TO_DM_ENV_RPC_DTYPE.get(np_type)
+  if data_type is None:
+    raise TypeError(
+        f'No dm_env_rpc DataType corresponds to NumPy type "{np_type}"')
+  return data_type
 
 
 def unpack_proto(proto: dm_env_rpc_pb2.Tensor, shape):

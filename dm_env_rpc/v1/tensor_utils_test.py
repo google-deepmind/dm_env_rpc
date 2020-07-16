@@ -317,7 +317,7 @@ class GetTensorTypeTests(absltest.TestCase):
       tensor_utils.get_tensor_type(mock_tensor)
 
 
-class GetTensorSpecTypeTests(absltest.TestCase):
+class DataTypeToNpTypeTests(absltest.TestCase):
 
   def test_float(self):
     self.assertEqual(
@@ -331,6 +331,28 @@ class GetTensorSpecTypeTests(absltest.TestCase):
   def test_unknown_type(self):
     with self.assertRaises(TypeError):
       tensor_utils.data_type_to_np_type(30)
+
+
+class NpTypeToDataTypeTests(absltest.TestCase):
+
+  def test_float32(self):
+    self.assertEqual(
+        dm_env_rpc_pb2.DataType.FLOAT,
+        tensor_utils.np_type_to_data_type(np.float32))
+
+  def test_int32(self):
+    self.assertEqual(
+        dm_env_rpc_pb2.DataType.INT32,
+        tensor_utils.np_type_to_data_type(np.int32))
+
+  def test_dtype(self):
+    self.assertEqual(
+        dm_env_rpc_pb2.DataType.INT32,
+        tensor_utils.np_type_to_data_type(np.dtype(np.int32)))
+
+  def test_unknown_type(self):
+    with self.assertRaisesRegex(TypeError, 'dm_env_rpc DataType.*complex64'):
+      tensor_utils.np_type_to_data_type(np.complex64)
 
 
 if __name__ == '__main__':
