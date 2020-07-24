@@ -17,71 +17,93 @@
 Note that the Tensor proto payload type is not supported, as it doesn't play
 well with NumPy.
 """
-
+import abc
 import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 
 
-class _BytesPacker():
+class Packer(metaclass=abc.ABCMeta):
+  """Converts between proto messages and NumPy arrays."""
 
-  def __init__(self, dtype: np.dtype):
-    self._dtype = dtype
+  def __init__(self, name: str, np_type: np.dtype):
+    self._np_type = np_type
+    self._name = name
 
-  def pack(self, payload, value: np.ndarray):
+  @property
+  def name(self):
+    return self._name
+
+  @property
+  def np_type(self):
+    return self._np_type
+
+  @abc.abstractmethod
+  def pack(self, proto, value: np.ndarray):
+    """Flattens and stores the given `value` array in the given `proto`."""
+
+  @abc.abstractmethod
+  def unpack(self, proto):
+    """Retrieves a flat NumPy array for the payload from the given `proto`."""
+
+
+class _RepeatedFieldPacker(Packer):
+  """Handles packing and unpacking most data types."""
+
+  def pack(self, proto, value: np.ndarray):
+    payload = getattr(proto, self._name)
+    payload.array.extend(value.ravel().tolist())
+
+  def unpack(self, proto):
+    payload = getattr(proto, self._name)
+    return np.fromiter(payload.array, self.np_type, len(payload.array))
+
+
+class _BytesPacker(Packer):
+  """Handles packing and unpacking int8 and uint8 arrays."""
+
+  def pack(self, proto, value: np.ndarray):
+    payload = getattr(proto, self.name)
     payload.array = value.tobytes()
 
-  def unpack(self, payload):
-    return np.frombuffer(payload.array, self._dtype)
+  def unpack(self, proto):
+    payload = getattr(proto, self.name)
+    return np.frombuffer(payload.array, self.np_type)
 
 
-class _RepeatedFieldPacker():
+class _RepeatedStringFieldPacker(Packer):
+  """Handles packing and unpacking strings."""
 
-  def __init__(self, dtype: np.dtype):
-    self._dtype = dtype
-
-  def pack(self, payload, value: np.ndarray):
+  def pack(self, proto, value: np.ndarray):
+    payload = getattr(proto, self.name)
     payload.array.extend(value.ravel().tolist())
 
-  def unpack(self, payload):
-    return np.fromiter(payload.array, self._dtype, len(payload.array))
-
-
-class _RepeatedStringFieldPacker():
-
-  def pack(self, payload, value: np.ndarray):
-    payload.array.extend(value.ravel().tolist())
-
-  def unpack(self, payload):
+  def unpack(self, proto):
     # String arrays with variable length strings can't be created with
     # np.fromiter, unlike other dtypes.
-    return np.array(payload.array, np.str_)
+    payload = getattr(proto, self.name)
+    return np.array(payload.array, self.np_type)
 
 
-# Payload channel name, NumPy representation, packer.
-_RAW_ASSOCIATIONS = (
-    ('floats', np.float32, _RepeatedFieldPacker(np.float32)),
-    ('doubles', np.float64, _RepeatedFieldPacker(np.float64)),
-    ('int8s', np.int8, _BytesPacker(np.int8)),
-    ('int32s', np.int32, _RepeatedFieldPacker(np.int32)),
-    ('int64s', np.int64, _RepeatedFieldPacker(np.int64)),
-    ('uint8s', np.uint8, _BytesPacker(np.uint8)),
-    ('uint32s', np.uint32, _RepeatedFieldPacker(np.uint32)),
-    ('uint64s', np.uint64, _RepeatedFieldPacker(np.uint64)),
-    ('bools', np.bool_, _RepeatedFieldPacker(np.bool_)),
-    ('strings', np.str_, _RepeatedStringFieldPacker()),
+_PACKERS = (
+    _RepeatedFieldPacker('floats', np.float32),
+    _RepeatedFieldPacker('doubles', np.float64),
+    _BytesPacker('int8s', np.int8),
+    _RepeatedFieldPacker('int32s', np.int32),
+    _RepeatedFieldPacker('int64s', np.int64),
+    _BytesPacker('uint8s', np.uint8),
+    _RepeatedFieldPacker('uint32s', np.uint32),
+    _RepeatedFieldPacker('uint64s', np.uint64),
+    _RepeatedFieldPacker('bools', np.bool_),
+    _RepeatedStringFieldPacker('strings', np.str_),
 )
 
 _NAME_TO_NP_TYPE = {
-    name: np_type for name, np_type, packer in _RAW_ASSOCIATIONS
-}
-
-_NP_TYPE_TO_NAME = {
-    np_type: name for name, np_type, packer in _RAW_ASSOCIATIONS
+    packer.name: packer.np_type for packer in _PACKERS
 }
 
 _TYPE_TO_PACKER = {
-    np_type: packer for name, np_type, packer in _RAW_ASSOCIATIONS
+    packer.np_type: packer for packer in _PACKERS
 }
 
 _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
@@ -108,7 +130,7 @@ def get_tensor_type(tensor_proto):
   payload = tensor_proto.WhichOneof('payload')
   np_type = _NAME_TO_NP_TYPE.get(payload)
   if not np_type:
-    raise TypeError(f'Unknown type {payload}')
+    raise TypeError(f'Unknown NumPy type {payload}')
   return np_type
 
 
@@ -116,7 +138,7 @@ def data_type_to_np_type(dm_env_rpc_dtype):
   """Returns the NumPy type for the given dm_env_rpc DataType."""
   np_type = _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dm_env_rpc_dtype)
   if not np_type:
-    raise TypeError(f'Unknown type {dm_env_rpc_dtype}')
+    raise TypeError(f'Unknown DataType {dm_env_rpc_dtype}')
   return np_type
 
 
@@ -133,6 +155,49 @@ def np_type_to_data_type(np_type):
   return data_type
 
 
+def get_packer(np_type):
+  """Retrieves the `Packer` which can handle the given NumPy Type.
+
+  Note: The returned packer is a relatively low level mechanism to convert
+  between NumPy arrays and the repeated `payload` fields in dm_env_rpc messages.
+  It won't set shape or type on the proto message.  Instead of this packer,
+  generally you should use `pack_tensor` and `unpack_tensor` to pack and unpack
+  data to `Tensor` messages, as it will handle setting shape and type on the
+  `Tensor` message as well.
+
+  Args:
+    np_type: The NumPy data type to retrieve a packer for.  eg: np.int32.
+
+  Returns:
+    An instance of Packer which will handle conversion between NumPy arrays of
+    `np_type` and the corresponding payload field in the dm_env_rpc message.
+
+  Raises:
+    TypeError: If the provided NumPy type has no known packer.
+  """
+  packer = _TYPE_TO_PACKER.get(np_type)
+  if not packer:
+    raise TypeError(f'Unknown NumPy type "{np_type}" has no known packer.')
+  return packer
+
+
+def reshape_array(array: np.ndarray, shape):
+  """Reshapes `array` to the given `shape` using dm_env_rpc's rules."""
+  if shape:
+    if len(array) == 1:
+      array = np.full(np.maximum(shape, 1), array[0])
+    else:
+      array.shape = shape
+    return array
+  else:
+    length = len(array)
+    if length != 1:
+      raise ValueError(
+          'Scalar tensors must have exactly 1 element but had {} elements.'
+          .format(length))
+    return array[0]
+
+
 def unpack_proto(proto: dm_env_rpc_pb2.Tensor, shape):
   """Converts a proto with payload oneof to a scalar or NumPy array.
 
@@ -147,21 +212,9 @@ def unpack_proto(proto: dm_env_rpc_pb2.Tensor, shape):
     payload with the correct type and shape.
   """
   np_type = get_tensor_type(proto)
-  packer = _TYPE_TO_PACKER[np_type]
-  array = packer.unpack(_get_payload(proto))
-  if shape:
-    if len(array) == 1:
-      array = np.full(np.maximum(shape, 1), array[0])
-    else:
-      array.shape = shape
-    return array
-  else:
-    length = len(array)
-    if length != 1:
-      raise ValueError(
-          'Scalar tensors must have exactly 1 element but had {} elements.'
-          .format(length))
-    return np_type(array[0])
+  packer = get_packer(np_type)
+  array = packer.unpack(proto)
+  return reshape_array(array, shape)
 
 
 def unpack_tensor(tensor_proto):
@@ -213,15 +266,10 @@ def pack_tensor(value, dtype=None, try_compress=False):
         copy=False,
         casting='same_kind')
   packed.shape[:] = value.shape
-  payload = getattr(packed, _NP_TYPE_TO_NAME[value.dtype.type])
   packer = _TYPE_TO_PACKER[value.dtype.type]
   if (try_compress and np.all(value == next(value.flat))):
     # All elements are the same.  Pack in to a single value.
-    packer.pack(payload, value.ravel()[0:1])
+    packer.pack(packed, value.ravel()[0:1])
   else:
-    packer.pack(payload, value)
+    packer.pack(packed, value)
   return packed
-
-
-def _get_payload(proto: dm_env_rpc_pb2.Tensor):
-  return getattr(proto, proto.WhichOneof('payload'))

@@ -355,5 +355,24 @@ class NpTypeToDataTypeTests(absltest.TestCase):
       tensor_utils.np_type_to_data_type(np.complex64)
 
 
+class GetPackerTests(absltest.TestCase):
+
+  def test_cannot_get_packer_for_invalid_type(self):
+    with self.assertRaisesRegex(TypeError, 'complex64'):
+      tensor_utils.get_packer(np.complex64)
+
+  def test_can_pack(self):
+    packer = tensor_utils.get_packer(np.int32)
+    tensor = dm_env_rpc_pb2.Tensor()
+    packer.pack(tensor, np.asarray([1, 2, 3]))
+    self.assertEqual([1, 2, 3], tensor.int32s.array)
+
+  def test_can_unpack(self):
+    packer = tensor_utils.get_packer(np.int32)
+    tensor = dm_env_rpc_pb2.Tensor()
+    tensor.int32s.array[:] = [1, 2, 3]
+    np.testing.assert_array_equal([1, 2, 3], packer.unpack(tensor))
+
+
 if __name__ == '__main__':
   absltest.main()
