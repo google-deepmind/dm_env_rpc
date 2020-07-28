@@ -25,6 +25,8 @@ message PropertySpec {
   bool is_readable = 2;
   bool is_writable = 3;
   bool is_listable = 4;
+
+  string description = 5;
 }
 
 message ListPropertyRequest {

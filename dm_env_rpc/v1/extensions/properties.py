@@ -90,6 +90,11 @@ class PropertySpec(object):
     else:
       return None
 
+  @property
+  def description(self) -> str:
+    """Returns the property's description."""
+    return self._property_spec_proto.description
+
 
 class PropertiesExtension(object):
   """Helper class for sending and receiving property requests and responses."""

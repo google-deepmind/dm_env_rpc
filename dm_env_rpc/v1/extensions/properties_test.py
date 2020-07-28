@@ -67,7 +67,8 @@ _EXPECTED_REQUEST_RESPONSE_PAIRS = {
                     }}"""),
     _create_property_request_key('list_property {}'):
         _pack_property_response("""list_property {
-                 values: { is_readable:true spec { name: "foo" dtype:INT32 } }
+                 values: { is_readable:true spec { name: "foo" dtype:INT32 }
+                           description: "This is a documented integer" }
                  values: { is_readable:true
                            is_writable:true
                            spec { name: "bar" dtype:STRING } }
@@ -145,6 +146,12 @@ class PropertiesTest(absltest.TestCase):
                                   'invalid property request.'):
         _ = extension.properties['bad_property']
 
+  def test_property_description(self):
+    with _create_mock_connection() as connection:
+      extension = properties.PropertiesExtension(connection)
+      property_specs = extension.properties.specs()
+      self.assertEqual('This is a documented integer',
+                       property_specs['foo'].description)
 
 if __name__ == '__main__':
   absltest.main()
