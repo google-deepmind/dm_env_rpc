@@ -89,11 +89,13 @@ def bounds(tensor_spec):
     raise ValueError('TensorSpec "{}" has non-numeric type {}.'
                      .format(tensor_spec.name, tensor_spec_type))
 
+  # Check min payload type matches the tensor type.
   min_which = tensor_spec.min.WhichOneof('payload')
   if min_which and not min_which.startswith(tensor_spec_type):
     raise ValueError('TensorSpec "{}" has dtype {} but min type {}.'.format(
         tensor_spec.name, tensor_spec_type, min_which))
 
+  # Check max payload type matches the tensor type.
   max_which = tensor_spec.max.WhichOneof('payload')
   if max_which and not max_which.startswith(tensor_spec_type):
     raise ValueError('TensorSpec "{}" has dtype {} but max type {}.'.format(
@@ -116,3 +118,64 @@ def bounds(tensor_spec):
         tensor_spec.name, min_bound, max_bound))
 
   return Bounds(np_type(min_bound), np_type(max_bound))
+
+
+def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
+  """Modifies `tensor_spec` to have its inclusive bounds set.
+
+  Packs `minimum` in to `tensor_spec.min` and `maximum` in to `tensor_spec.max`.
+
+  Args:
+    tensor_spec: An instance of a dm_env_rpc TensorSpec proto.  It should
+      already have its `name`, `dtype` and `shape` attributes set.
+    minimum: The minimum value that elements in the described tensor can obtain.
+      A scalar, iterable of scalars, or None.  If None, `min` will be cleared on
+      `tensor_spec`.
+    maximum: The maximum value that elements in the described tensor can obtain.
+      A scalar, iterable of scalars, or None.  If None, `max` will be cleared on
+      `tensor_spec`.
+  """
+  np_type = tensor_utils.data_type_to_np_type(tensor_spec.dtype)
+  if not issubclass(np_type, np.number):
+    raise ValueError(f'TensorSpec has non-numeric type "{np_type}".')
+
+  np_type_bounds = _np_range_info(np_type)
+  has_min = minimum is not None
+  has_max = maximum is not None
+
+  if has_min:
+    minimum = np.asarray(minimum)
+    if minimum.size != 1 and minimum.shape != tuple(tensor_spec.shape):
+      raise ValueError(
+          f'minimum has shape {minimum.shape}, which is incompatible with '
+          f"tensor_spec {tensor_spec.name}'s shape {tensor_spec.shape}.")
+
+  if has_max:
+    maximum = np.asarray(maximum)
+    if maximum.size != 1 and maximum.shape != tuple(tensor_spec.shape):
+      raise ValueError(
+          f'maximum has shape {maximum.shape}, which is incompatible with '
+          f"tensor_spec {tensor_spec.name}'s shape {tensor_spec.shape}.")
+
+  if ((has_min and np.any(minimum < np_type_bounds.min)) or
+      (has_max and np.any(maximum > np_type_bounds.max))):
+    raise ValueError(
+        f"TensorSpec {tensor_spec.name}'s bounds [{minimum}, {maximum}] are "
+        'larger than its dtype bounds '
+        f'[{np_type_bounds.min}, {np_type_bounds.max}]')
+
+  if (has_min and has_max and np.any(maximum < minimum)):
+    raise ValueError('TensorSpec "{}" has min {} larger than max {}.'.format(
+        tensor_spec.name, minimum, maximum))
+
+  packer = tensor_utils.get_packer(np_type)
+  if has_min:
+    packer.pack(tensor_spec.min, minimum)
+  else:
+    tensor_spec.ClearField('min')
+
+  if has_max:
+    packer.pack(tensor_spec.max, maximum)
+  else:
+    tensor_spec.ClearField('max')
+
