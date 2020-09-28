@@ -15,7 +15,7 @@
 """An implementation of a dm_env environment using dm_env_rpc."""
 
 import collections
-from typing import Any, Iterable, Mapping, Optional, Tuple
+from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple
 import dm_env
 
 from dm_env_rpc.v1 import connection as dm_env_rpc_connection
@@ -40,10 +40,10 @@ class DmEnvAdaptor(dm_env.Environment):
   """An implementation of dm_env using dm_env_rpc as the data protocol."""
 
   def __init__(self,
-               connection,
-               specs,
-               requested_observations=None,
-               nested_tensors=True):
+               connection: dm_env_rpc_connection.Connection,
+               specs: dm_env_rpc_pb2.ActionObservationSpecs,
+               requested_observations: Optional[Sequence[str]] = None,
+               nested_tensors: bool = True):
     """Initializes the environment with the provided dm_env_rpc connection.
 
     Args:
