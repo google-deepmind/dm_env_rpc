@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2020 DeepMind Technologies Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -101,18 +100,18 @@ class PropertiesTest(absltest.TestCase):
   def test_read_property(self):
     with _create_mock_connection() as connection:
       extension = properties.PropertiesExtension(connection)
-      self.assertEqual(1, extension.properties['foo'])
+      self.assertEqual(1, extension['foo'])
 
   def test_write_property(self):
     with _create_mock_connection() as connection:
       extension = properties.PropertiesExtension(connection)
-      extension.properties['bar'] = 'some_value'
-      self.assertEqual('some_value', extension.properties['bar'])
+      extension['bar'] = 'some_value'
+      self.assertEqual('some_value', extension['bar'])
 
   def test_list_property(self):
     with _create_mock_connection() as connection:
       extension = properties.PropertiesExtension(connection)
-      property_specs = extension.properties.specs('baz')
+      property_specs = extension.specs('baz')
       self.assertLen(property_specs, 1)
 
       property_spec = property_specs['baz.fiz']
@@ -125,7 +124,7 @@ class PropertiesTest(absltest.TestCase):
   def test_root_list_property(self):
     with _create_mock_connection() as connection:
       extension = properties.PropertiesExtension(connection)
-      property_specs = extension.properties.specs()
+      property_specs = extension.specs()
       self.assertLen(property_specs, 3)
       self.assertTrue(property_specs['foo'].readable)
       self.assertTrue(property_specs['bar'].readable)
@@ -135,7 +134,7 @@ class PropertiesTest(absltest.TestCase):
   def test_invalid_spec_request_on_listable_property(self):
     with _create_mock_connection() as connection:
       extension = properties.PropertiesExtension(connection)
-      property_specs = extension.properties.specs()
+      property_specs = extension.specs()
       self.assertTrue(property_specs['baz'].listable)
       self.assertIsNone(property_specs['baz'].spec)
 
@@ -144,12 +143,12 @@ class PropertiesTest(absltest.TestCase):
       extension = properties.PropertiesExtension(connection)
       with self.assertRaisesRegex(error.DmEnvRpcError,
                                   'invalid property request.'):
-        _ = extension.properties['bad_property']
+        _ = extension['bad_property']
 
   def test_property_description(self):
     with _create_mock_connection() as connection:
       extension = properties.PropertiesExtension(connection)
-      property_specs = extension.properties.specs()
+      property_specs = extension.specs()
       self.assertEqual('This is a documented integer',
                        property_specs['foo'].description)
 

@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2020 DeepMind Technologies Limited. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,16 +20,16 @@ responses using the provided dm_env_rpc.v1.connection.Connection instance to
 send and receive extension messages.
 
 Example Usage:
-  env = CreateEnvironmentWithPropertiesExtension(connection)
+  property_extension = PropertyExtension(connection)
 
   # To read a property:
-  value = env.properties['my_property']
+  value = property_extension['my_property']
 
   # To write a property:
-  env.properties['my_property'] = new_value
+  property_extension['my_property'] = new_value
 
   # To find available properties:
-  property_specs = env.properties.specs()
+  property_specs = property_extension.specs()
 
   spec = property_specs['my_property']
 """
@@ -108,37 +107,21 @@ class PropertiesExtension(object):
     """
     self._connection = connection
 
-  @property
-  def properties(self):
-    """Returns an indexible object to read, write and list properties."""
+  def __getitem__(self, key: str):
+    """Alias for PropertiesExtension read function."""
+    return self.read(key)
 
-    class _PropertyHelper(object):
-      """Helper class to enable properties to be indexible by key."""
+  def __setitem__(self, key: str, value) -> None:
+    """Alias for PropertiesExtension write function."""
+    self.write(key, value)
 
-      def __init__(self, extension: PropertiesExtension):
-        self._extension = extension
+  def specs(self, key: str = '') -> Mapping[str, PropertySpec]:
+    """Helper to return sub-properties as a dict."""
+    return {
+        sub_property.key: sub_property for sub_property in self.list(key)
+    }
 
-      def __getitem__(self, key: str):
-        """Alias for PropertiesExtension read_property function."""
-        return self._extension.read_property(key)
-
-      def __setitem__(self, key: str, value) -> None:
-        """Alias for PropertiesExtension write_property function."""
-        self._extension.write_property(key, value)
-
-      def list(self, key: str = '') -> Sequence[PropertySpec]:
-        """Alias for PropertiesExtension list_property function."""
-        return self._extension.list_property(key)
-
-      def specs(self, key: str = '') -> Mapping[str, PropertySpec]:
-        """Helper to return sub-properties as a dict."""
-        return {
-            sub_property.key: sub_property for sub_property in self.list(key)
-        }
-
-    return _PropertyHelper(self)
-
-  def read_property(self, key: str):
+  def read(self, key: str):
     """Reads the value of a property.
 
     Args:
@@ -158,7 +141,7 @@ class PropertiesExtension(object):
     self._connection.send(packed_request).Unpack(response)
     return tensor_utils.unpack_tensor(response.read_property.value)
 
-  def write_property(self, key: str, value) -> None:
+  def write(self, key: str, value) -> None:
     """Writes the provided value to a property.
 
     Args:
@@ -173,7 +156,7 @@ class PropertiesExtension(object):
                 key=key, value=tensor_utils.pack_tensor(value))))
     self._connection.send(packed_request)
 
-  def list_property(self, key: str = '') -> Sequence[PropertySpec]:
+  def list(self, key: str = '') -> Sequence[PropertySpec]:
     """Lists properties residing under the provided key.
 
     Args:
