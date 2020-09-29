@@ -152,5 +152,16 @@ class PropertiesTest(absltest.TestCase):
       self.assertEqual('This is a documented integer',
                        property_specs['foo'].description)
 
+  def test_property_print(self):
+    with _create_mock_connection() as connection:
+      extension = properties.PropertiesExtension(connection)
+      property_specs = extension.specs()
+      self.assertRegex(
+          str(property_specs['foo']),
+          (r'PropertySpec\(key=foo, readable=True, writable=False, '
+           r'listable=False, spec=.*, '
+           r'description=This is a documented integer\)'))
+
+
 if __name__ == '__main__':
   absltest.main()

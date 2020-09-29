@@ -94,6 +94,11 @@ class PropertySpec(object):
     """Returns the property's description."""
     return self._property_spec_proto.description
 
+  def __repr__(self):
+    return (f'PropertySpec(key={self.key}, readable={self.readable}, '
+            f'writable={self.writable}, listable={self.listable}, '
+            f'spec={self.spec}, description={self.description})')
+
 
 class PropertiesExtension(object):
   """Helper class for sending and receiving property requests and responses."""
