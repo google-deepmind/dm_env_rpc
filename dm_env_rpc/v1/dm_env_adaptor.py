@@ -17,6 +17,7 @@
 import collections
 from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple
 import dm_env
+import frozendict
 
 from dm_env_rpc.v1 import connection as dm_env_rpc_connection
 from dm_env_rpc.v1 import dm_env_flatten_utils
@@ -37,13 +38,21 @@ DEFAULT_KEY_SEPARATOR = '.'
 
 
 class DmEnvAdaptor(dm_env.Environment):
-  """An implementation of dm_env using dm_env_rpc as the data protocol."""
+  """An implementation of dm_env using dm_env_rpc as the data protocol.
+
+  Users can also optionally provide a mapping of objects to DmEnvAdaptor
+  attributes. This is to accomodate user-created protocol extensions that
+  compliment the core protocol.
+
+  """
 
   def __init__(self,
                connection: dm_env_rpc_connection.Connection,
                specs: dm_env_rpc_pb2.ActionObservationSpecs,
                requested_observations: Optional[Sequence[str]] = None,
-               nested_tensors: bool = True):
+               nested_tensors: bool = True,
+               extensions: Optional[Mapping[str,
+                                            Any]] = frozendict.frozendict()):
     """Initializes the environment with the provided dm_env_rpc connection.
 
     Args:
@@ -54,6 +63,8 @@ class DmEnvAdaptor(dm_env.Environment):
         environment when step is called. If None is specified then all
         observations will be requested.
       nested_tensors: Boolean to determine whether to flatten/unflatten tensors.
+      extensions: Optional mapping of extension instances to DmEnvAdaptor
+        attributes. Raises ValueError if attribute already exists.
     """
     self._dm_env_rpc_specs = specs
     self._action_specs = spec_manager.SpecManager(specs.actions)
@@ -93,6 +104,12 @@ class DmEnvAdaptor(dm_env.Environment):
 
     # Not strictly necessary but it makes the unit tests deterministic.
     self._requested_observation_uids.sort()
+
+    for extension_name, extension in extensions.items():
+      if hasattr(self, extension_name):
+        raise ValueError(
+            f'DmEnvAdaptor already has attribute "{extension_name}"!')
+      setattr(self, extension_name, extension)
 
   def reset(self):
     """Implements dm_env.Environment.reset."""
@@ -239,7 +256,8 @@ def join_world(
     connection: dm_env_rpc_connection.Connection,
     world_name: str,
     join_world_settings: Mapping[str, Any],
-    requested_observations: Optional[Iterable[str]] = None
+    requested_observations: Optional[Iterable[str]] = None,
+    extensions: Optional[Mapping[str, Any]] = frozendict.frozendict()
 ) -> DmEnvAdaptor:
   """Helper function to join a world with the provided settings.
 
@@ -250,6 +268,8 @@ def join_world(
     join_world_settings: Settings used to join the world. Values must be
       packable into a Tensor message.
     requested_observations: Optional set of requested observations.
+    extensions: Optional mapping of extension instances to DmEnvAdaptor
+      attributes.
 
   Returns:
     Instance of DmEnvAdaptor.
@@ -263,7 +283,8 @@ def join_world(
     specs = connection.send(
         dm_env_rpc_pb2.JoinWorldRequest(
             world_name=world_name, settings=join_world_settings)).specs
-    return DmEnvAdaptor(connection, specs, requested_observations)
+    return DmEnvAdaptor(
+        connection, specs, requested_observations, extensions=extensions)
   except error.DmEnvRpcError:
     connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
     raise
@@ -273,7 +294,8 @@ def create_and_join_world(
     connection: dm_env_rpc_connection.Connection,
     create_world_settings: Mapping[str, Any],
     join_world_settings: Mapping[str, Any],
-    requested_observations: Optional[Iterable[str]] = None
+    requested_observations: Optional[Iterable[str]] = None,
+    extensions: Optional[Mapping[str, Any]] = frozendict.frozendict()
 ) -> Tuple[DmEnvAdaptor, str]:
   """Helper function to create and join a world with the provided settings.
 
@@ -285,6 +307,8 @@ def create_and_join_world(
     join_world_settings: Settings used to join the world. Values must be
       packable into a Tensor message.
     requested_observations: Optional set of requested observations.
+    extensions: Optional mapping of extension instances to DmEnvAdaptor
+      attributes.
 
   Returns:
     Tuple of DmEnvAdaptor and the created world name.
@@ -301,7 +325,7 @@ def create_and_join_world(
                                          ['env', 'world_name'])
     return return_type(
         join_world(connection, world_name, join_world_settings,
-                   requested_observations), world_name)
+                   requested_observations, extensions), world_name)
   except error.DmEnvRpcError:
     connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
     raise

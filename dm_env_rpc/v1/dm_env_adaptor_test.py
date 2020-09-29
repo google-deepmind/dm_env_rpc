@@ -457,6 +457,27 @@ class EnvironmentNestedActionsObservations(absltest.TestCase):
     connection.send.assert_called_once_with(
         dm_env_rpc_pb2.StepRequest(requested_observations=[1]))
 
+  def test_extensions(self):
+    class _ExampleExtension:
+
+      def foo(self):
+        return 'bar'
+
+    env = dm_env_adaptor.DmEnvAdaptor(
+        connection=mock.MagicMock(),
+        specs=_SAMPLE_SPEC,
+        extensions={'extension': _ExampleExtension()})
+
+    self.assertEqual('bar', env.extension.foo())
+
+  def test_invalid_extension_attr(self):
+    with self.assertRaisesRegex(ValueError,
+                                'DmEnvAdaptor already has attribute'):
+      dm_env_adaptor.DmEnvAdaptor(
+          connection=mock.MagicMock(),
+          specs=_SAMPLE_SPEC,
+          extensions={'_connection': object()})
+
 
 class CreateJoinHelpers(absltest.TestCase):
 
@@ -506,6 +527,26 @@ class CreateJoinHelpers(absltest.TestCase):
                     key: 'player', value: { strings: { array: 'zaphod' } }
                 }""", dm_env_rpc_pb2.JoinWorldRequest())),
     ])
+
+  def test_create_join_world_with_extension(self):
+
+    class _ExampleExtension:
+
+      def foo(self):
+        return 'bar'
+
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(side_effect=[
+        dm_env_rpc_pb2.CreateWorldResponse(world_name='foo'),
+        dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_SPEC)
+    ])
+
+    env, _ = dm_env_adaptor.create_and_join_world(
+        connection,
+        create_world_settings={},
+        join_world_settings={},
+        extensions={'extension': _ExampleExtension()})
+    self.assertEqual('bar', env.extension.foo())
 
   def test_created_but_failed_to_join_world(self):
     connection = mock.MagicMock()

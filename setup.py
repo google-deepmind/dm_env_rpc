@@ -112,6 +112,7 @@ setup(
     packages=find_packages(exclude=['examples']),
     install_requires=[
         'dm-env>=1.2',
+        'frozendict',
         'googleapis-common-protos',
         'grpcio',
         'numpy',
