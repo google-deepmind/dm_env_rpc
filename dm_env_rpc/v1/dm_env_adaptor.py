@@ -46,6 +46,9 @@ class DmEnvAdaptor(dm_env.Environment):
 
   """
 
+  # Disable pytype attribute checking for dynamically created extension attrs.
+  _HAS_DYNAMIC_ATTRIBUTES = True
+
   def __init__(self,
                connection: dm_env_rpc_connection.Connection,
                specs: dm_env_rpc_pb2.ActionObservationSpecs,
