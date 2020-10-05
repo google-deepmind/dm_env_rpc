@@ -269,7 +269,7 @@ def join_world(
       server.
     world_name: Name of the world to join.
     join_world_settings: Settings used to join the world. Values must be
-      packable into a Tensor message.
+      packable into a Tensor message or already packed.
     requested_observations: Optional set of requested observations.
     extensions: Optional mapping of extension instances to DmEnvAdaptor
       attributes.
@@ -279,7 +279,8 @@ def join_world(
   """
 
   join_world_settings = {
-      key: tensor_utils.pack_tensor(value)
+      key: (value if isinstance(value, dm_env_rpc_pb2.Tensor) else
+            tensor_utils.pack_tensor(value))
       for key, value in join_world_settings.items()
   }
   try:
@@ -306,7 +307,7 @@ def create_and_join_world(
     connection: An instance of Connection already connected to a dm_env_rpc
       server.
     create_world_settings: Settings used to create the world. Values must be
-      packable into a Tensor proto.
+      packable into a Tensor proto or already packed.
     join_world_settings: Settings used to join the world. Values must be
       packable into a Tensor message.
     requested_observations: Optional set of requested observations.
@@ -317,7 +318,8 @@ def create_and_join_world(
     Tuple of DmEnvAdaptor and the created world name.
   """
   create_world_settings = {
-      key: tensor_utils.pack_tensor(value)
+      key: (value if isinstance(value, dm_env_rpc_pb2.Tensor) else
+            tensor_utils.pack_tensor(value))
       for key, value in create_world_settings.items()
   }
   world_name = connection.send(

@@ -528,6 +528,44 @@ class CreateJoinHelpers(absltest.TestCase):
                 }""", dm_env_rpc_pb2.JoinWorldRequest())),
     ])
 
+  def test_create_join_world_with_packed_settings(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(side_effect=[
+        dm_env_rpc_pb2.CreateWorldResponse(world_name='Magrathea_02'),
+        dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_SPEC)
+    ])
+    env, world_name = dm_env_adaptor.create_and_join_world(
+        connection,
+        create_world_settings={'planet': tensor_utils.pack_tensor('Magrathea')},
+        join_world_settings={
+            'ship_type': tensor_utils.pack_tensor(2),
+            'player': tensor_utils.pack_tensor('arthur'),
+            'unpacked_setting': [1, 2, 3],
+        })
+    self.assertIsNotNone(env)
+    self.assertEqual('Magrathea_02', world_name)
+
+    connection.send.assert_has_calls([
+        mock.call(
+            text_format.Parse(
+                """settings: {
+                key: 'planet', value: { strings: { array: 'Magrathea' } }
+            }""", dm_env_rpc_pb2.CreateWorldRequest())),
+        mock.call(
+            text_format.Parse(
+                """world_name: 'Magrathea_02'
+                settings: { key: 'ship_type', value: { int64s: { array: 2 } } }
+                settings: {
+                    key: 'player', value: { strings: { array: 'arthur' } }
+                }
+                settings: {
+                    key: 'unpacked_setting', value: {
+                      int64s: { array: 1 array: 2 array: 3 }
+                      shape: 3
+                    }
+                }""", dm_env_rpc_pb2.JoinWorldRequest())),
+    ])
+
   def test_create_join_world_with_extension(self):
 
     class _ExampleExtension:
