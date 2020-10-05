@@ -18,6 +18,7 @@ Note that the Tensor proto payload type is not supported, as it doesn't play
 well with NumPy.
 """
 import abc
+from typing import Optional, Sequence, Union
 import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
@@ -198,7 +199,9 @@ def reshape_array(array: np.ndarray, shape):
     return array[0]
 
 
-def unpack_proto(proto: dm_env_rpc_pb2.Tensor, shape):
+def unpack_proto(proto: Union[dm_env_rpc_pb2.Tensor,
+                              dm_env_rpc_pb2.TensorSpec.Value],
+                 shape: Optional[Sequence[int]]):
   """Converts a proto with payload oneof to a scalar or NumPy array.
 
   Args:
@@ -207,7 +210,7 @@ def unpack_proto(proto: dm_env_rpc_pb2.Tensor, shape):
       data is assumed to be a scalar type.
 
   Returns:
-    If `shape` is empty or None,, returns a scalar (float, int, string, etc.)
+    If `shape` is empty or None, returns a scalar (float, int, string, etc.)
     of the correct type and value. Otherwise returns a NumPy array of the
     payload with the correct type and shape.
   """
@@ -217,7 +220,7 @@ def unpack_proto(proto: dm_env_rpc_pb2.Tensor, shape):
   return reshape_array(array, shape)
 
 
-def unpack_tensor(tensor_proto):
+def unpack_tensor(tensor_proto: dm_env_rpc_pb2.Tensor):
   """Converts a Tensor proto to a scalar or NumPy array.
 
   Args:
