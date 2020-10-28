@@ -1,5 +1,23 @@
 # Release Notes
 
+## [1.0.3]
+
+### Added
+
+*   Support for property descriptions.
+*   New utility functions for creating a Connection instance from a server
+    address.
+*   DmEnvAdaptor helper functions for creating and joining worlds.
+*   Additional compliance tests for resetting.
+*   Support for optional DmEnvAdaptor extensions.
+
+### Changed
+
+*   Removed portpicker dependency, instead relying on gRPC port picking
+    functionality.
+*   Changed property extension API to be more ameanable to being used as an
+    extension object for DmEnvAdaptor.
+
 ## [1.0.2]
 
 *   Explicitly support nested tensors by the use of a period character in the
