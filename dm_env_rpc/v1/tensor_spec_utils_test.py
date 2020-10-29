@@ -15,6 +15,7 @@
 """Tests for dm_env_rpc helper functions."""
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 import numpy as np
 
@@ -38,7 +39,7 @@ class NpRangeInfoTests(absltest.TestCase):
       _ = tensor_spec_utils._np_range_info(np.str_).min
 
 
-class BoundsTests(absltest.TestCase):
+class BoundsTests(parameterized.TestCase):
 
   def test_unbounded_unsigned(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
@@ -231,24 +232,44 @@ class BoundsTests(absltest.TestCase):
     bounds = tensor_spec_utils.bounds(tensor_spec)
     self.assertEqual((-1, 1), bounds)
 
-  def test_max_larger_than_dtype_can_support_raises_error_legacy(self):
+  @parameterized.parameters([
+      dict(minimum=-500, maximum=0),
+      dict(minimum=0, maximum=500),
+  ])
+  def test_error_if_min_or_max_cannot_be_safely_cast_to_dtype(
+      self, minimum, maximum):
+    name = 'foo'
+    dtype = dm_env_rpc_pb2.DataType.INT8
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
-    tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT8
-    tensor_spec.max.int8 = 500
-    tensor_spec.name = 'foo'
-    with self.assertRaisesRegex(ValueError, 'foo.*-128, 500.*int8.*-128, 127'):
+    tensor_spec.dtype = dtype
+    tensor_spec.min.int8 = minimum
+    tensor_spec.max.int8 = maximum
+    tensor_spec.name = name
+    with self.assertRaisesWithLiteralMatch(
+        ValueError,
+        tensor_spec_utils._BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE.format(
+            name=name,
+            minimum=minimum,
+            maximum=maximum,
+            dtype=dm_env_rpc_pb2.DataType.Name(dtype).lower(),
+        )):
       tensor_spec_utils.bounds(tensor_spec)
 
-  def test_min_larger_than_dtype_can_support_raises_error(self):
+  @parameterized.parameters([
+      dict(minimum=0., maximum=np.inf),
+      dict(minimum=-np.inf, maximum=0.),
+      dict(minimum=-np.inf, maximum=np.inf),
+  ])
+  def test_infinite_bounds_are_valid_for_floats(self, minimum, maximum):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
-    tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT8
-    tensor_spec.min.int8 = -500
+    tensor_spec.dtype = dm_env_rpc_pb2.DataType.DOUBLE
+    tensor_spec.min.double = minimum
+    tensor_spec.max.double = maximum
     tensor_spec.name = 'foo'
-    with self.assertRaisesRegex(ValueError, 'foo.*-500, 127.*int8.*-128, 127'):
-      tensor_spec_utils.bounds(tensor_spec)
+    tensor_spec_utils.bounds(tensor_spec)
 
 
-class SetBoundsTests(absltest.TestCase):
+class SetBoundsTests(parameterized.TestCase):
 
   def test_set_scalar_bounds(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec(
@@ -343,17 +364,23 @@ class SetBoundsTests(absltest.TestCase):
     with self.assertRaisesRegex(ValueError, 'larger than max'):
       tensor_spec_utils.set_bounds(tensor_spec, minimum=[0, 4], maximum=[1, 1])
 
-  def test_min_cannot_exceed_bounds_on_dtype(self):
-    tensor_spec = dm_env_rpc_pb2.TensorSpec(
-        name='test', dtype=dm_env_rpc_pb2.DataType.INT8)
-    with self.assertRaisesRegex(ValueError, 'larger than its dtype bounds'):
-      tensor_spec_utils.set_bounds(tensor_spec, minimum=[-1000], maximum=[1])
-
-  def test_max_cannot_exceed_bounds_on_dtype(self):
-    tensor_spec = dm_env_rpc_pb2.TensorSpec(
-        name='test', dtype=dm_env_rpc_pb2.DataType.INT8)
-    with self.assertRaisesRegex(ValueError, 'larger than its dtype bounds'):
-      tensor_spec_utils.set_bounds(tensor_spec, minimum=[0], maximum=[1000])
+  @parameterized.parameters([
+      dict(minimum=[-1000], maximum=[1]),
+      dict(minimum=[1], maximum=[1000]),
+  ])
+  def test_new_bounds_must_be_safely_castable_to_dtype(self, minimum, maximum):
+    name = 'test'
+    dtype = dm_env_rpc_pb2.DataType.INT8
+    tensor_spec = dm_env_rpc_pb2.TensorSpec(name=name, dtype=dtype)
+    with self.assertRaisesWithLiteralMatch(
+        ValueError,
+        tensor_spec_utils._BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE.format(
+            name=name,
+            minimum=minimum,
+            maximum=maximum,
+            dtype=dm_env_rpc_pb2.DataType.Name(dtype))):
+      tensor_spec_utils.set_bounds(
+          tensor_spec, minimum=minimum, maximum=maximum)
 
 if __name__ == '__main__':
   absltest.main()

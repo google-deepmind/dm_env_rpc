@@ -21,10 +21,21 @@ from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import tensor_utils
 
 
+_BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE = (
+    'TensorSpec "{name}"\'s bounds [{minimum}, {maximum}] contain value(s) '
+    'that cannot be safely cast to dtype {dtype}.')
+
 Bounds = collections.namedtuple('Bounds', ['min', 'max'])
 
 _SCALAR_VALUE_TYPES = frozenset(
     ('float', 'double', 'int8', 'int32', 'int64', 'uint8', 'uint32', 'uint64'))
+
+
+def _can_cast(array_or_scalar, np_dtype):
+  for value in np.asarray(array_or_scalar).flat:
+    if not np.can_cast(value, np_dtype, casting='safe'):
+      return False
+  return True
 
 
 def _np_range_info(np_type):
@@ -105,13 +116,13 @@ def bounds(tensor_spec):
   min_bound = _get_value(tensor_spec.min, tensor_spec.shape, dtype_bounds.min)
   max_bound = _get_value(tensor_spec.max, tensor_spec.shape, dtype_bounds.max)
 
-  if (np.any(min_bound < dtype_bounds.min) or
-      np.any(max_bound > dtype_bounds.max)):
+  if not _can_cast(min_bound, np_type) or not _can_cast(max_bound, np_type):
     raise ValueError(
-        'TensorSpec "{}"\'s bounds [{}, {}] are larger than the bounds on its '
-        '{} dtype [{}, {}]'.format(
-            tensor_spec.name, min_bound, max_bound, tensor_spec_type,
-            dtype_bounds.min, dtype_bounds.max))
+        _BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE.format(
+            name=tensor_spec.name,
+            minimum=min_bound,
+            maximum=max_bound,
+            dtype=tensor_spec_type))
 
   if np.any(max_bound < min_bound):
     raise ValueError('TensorSpec "{}" has min {} larger than max {}.'.format(
@@ -157,12 +168,14 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
           f'maximum has shape {maximum.shape}, which is incompatible with '
           f"tensor_spec {tensor_spec.name}'s shape {tensor_spec.shape}.")
 
-  if ((has_min and np.any(minimum < np_type_bounds.min)) or
-      (has_max and np.any(maximum > np_type_bounds.max))):
+  if ((has_min and not _can_cast(minimum, np_type)) or
+      (has_max and not _can_cast(maximum, np_type))):
     raise ValueError(
-        f"TensorSpec {tensor_spec.name}'s bounds [{minimum}, {maximum}] are "
-        'larger than its dtype bounds '
-        f'[{np_type_bounds.min}, {np_type_bounds.max}]')
+        _BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE.format(
+            name=tensor_spec.name,
+            minimum=minimum,
+            maximum=maximum,
+            dtype=dm_env_rpc_pb2.DataType.Name(tensor_spec.dtype)))
 
   if (has_min and has_max and np.any(maximum < minimum)):
     raise ValueError('TensorSpec "{}" has min {} larger than max {}.'.format(
@@ -178,4 +191,3 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
     packer.pack(tensor_spec.max, maximum)
   else:
     tensor_spec.ClearField('max')
-
