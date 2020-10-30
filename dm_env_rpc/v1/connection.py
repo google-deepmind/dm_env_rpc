@@ -132,7 +132,7 @@ class Connection(object):
 
 def create_secure_channel_and_connect(
     server_address: str,
-    credentials: grpc.ChannelCredentials,
+    credentials: grpc.ChannelCredentials = grpc.local_channel_credentials(),
     timeout: Optional[float] = None) -> Connection:
   """Creates a secure channel from server address and credentials and connects.
 
