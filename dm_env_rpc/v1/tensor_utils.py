@@ -259,10 +259,10 @@ def pack_tensor(value, dtype=None, try_compress=False):
   packed = dm_env_rpc_pb2.Tensor()
   value = np.asarray(value)
   if value.dtype == np.object:
-    raise ValueError('Could not convert to a tensor of primitive types.  Are '
-                     'the iterables jagged?  Or are the data types not '
-                     'primitive scalar types like strings, floats, or '
-                     'integers?')
+    raise ValueError('Could not convert value to a tensor of primitive types: '
+                     f'{value}.  Are the iterables jagged?  Or are the data '
+                     'types not primitive scalar types like strings, floats, '
+                     'or integers?')
   if dtype is not None:
     value = value.astype(
         dtype=_DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype),
