@@ -21,7 +21,19 @@ import abc
 from typing import Optional, Sequence, Union
 import numpy as np
 
+from google.protobuf import any_pb2
+from google.protobuf import message
 from dm_env_rpc.v1 import dm_env_rpc_pb2
+
+
+def _pack_any_proto(value):
+  """Helper function to pack Any proto, iff it's not already packed."""
+  if isinstance(value, any_pb2.Any):
+    return value
+  else:
+    any_proto = any_pb2.Any()
+    any_proto.Pack(value)
+    return any_proto
 
 
 class Packer(metaclass=abc.ABCMeta):
@@ -86,6 +98,19 @@ class _RepeatedStringFieldPacker(Packer):
     return np.array(payload.array, self.np_type)
 
 
+class _RepeatedProtoFieldPacker(Packer):
+  """Handles packing of protos."""
+
+  def pack(self, proto, value: np.ndarray):
+    payload = getattr(proto, self.name)
+    payload.array.extend(
+        [_pack_any_proto(sub_value) for sub_value in value.ravel()])
+
+  def unpack(self, proto):
+    payload = getattr(proto, self._name)
+    return np.array(payload.array, self.np_type)
+
+
 _PACKERS = (
     _RepeatedFieldPacker('floats', np.float32),
     _RepeatedFieldPacker('doubles', np.float64),
@@ -97,6 +122,7 @@ _PACKERS = (
     _RepeatedFieldPacker('uint64s', np.uint64),
     _RepeatedFieldPacker('bools', np.bool_),
     _RepeatedStringFieldPacker('strings', np.str_),
+    _RepeatedProtoFieldPacker('protos', np.object_),
 )
 
 _NAME_TO_NP_TYPE = {
@@ -118,6 +144,7 @@ _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
     dm_env_rpc_pb2.DataType.UINT64: np.uint64,
     dm_env_rpc_pb2.DataType.BOOL: np.bool_,
     dm_env_rpc_pb2.DataType.STRING: np.str_,
+    dm_env_rpc_pb2.DataType.PROTO: np.object_,
 }
 
 _NUMPY_DTYPE_TO_DM_ENV_RPC_DTYPE = {
@@ -239,7 +266,8 @@ def pack_tensor(value, dtype=None, try_compress=False):
   """Encodes the given value as a tensor.
 
   Args:
-    value: A scalar (float, int, string, etc.), NumPy array, or nested lists.
+    value: A scalar (float, int, string, etc.), protobuf message, NumPy array,
+      or nested lists.
     dtype: The type to pack the data to.  If set to None, will attempt to detect
       the correct type automatically.  Either a dm_env_rpc DataType enum or
       NumPy type is acceptable.
@@ -249,20 +277,23 @@ def pack_tensor(value, dtype=None, try_compress=False):
       any compression will actually happen.
 
   Raises:
-    ValueError: If `value` is a jagged array, not a primitive type or nested
-      iterable of primitive types, or all elements can't be cast to the same
-      type or the requested type.
+    ValueError: If `value` is a jagged array, not a primitive type, nested
+      iterable of primitive types or protobuf messages, or all elements can't be
+      cast to the same type or the requested type.
 
   Returns:
     A dm_env_rpc Tensor proto containing the data.
   """
   packed = dm_env_rpc_pb2.Tensor()
   value = np.asarray(value)
-  if value.dtype == np.object:
+
+  # For efficiency, only check that the first element is a protobuf message.
+  if value.dtype == np.object and value.size > 0 and not isinstance(
+      value.item(0), message.Message):
     raise ValueError('Could not convert value to a tensor of primitive types: '
-                     f'{value}.  Are the iterables jagged?  Or are the data '
-                     'types not primitive scalar types like strings, floats, '
-                     'or integers?')
+                     f'{value}. Are the iterables jagged? Are the data types '
+                     'not primitive scalar types like strings, floats, or '
+                     'integers? Or are the elements not protobuf messages?')
   if dtype is not None:
     value = value.astype(
         dtype=_DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype),

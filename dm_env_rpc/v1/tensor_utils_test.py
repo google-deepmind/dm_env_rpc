@@ -21,6 +21,8 @@ from absl.testing import parameterized
 import mock
 import numpy as np
 
+from google.protobuf import any_pb2
+from google.protobuf import struct_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import tensor_utils
 
@@ -53,6 +55,26 @@ class PackTensorTests(parameterized.TestCase):
     self.assertEqual([], tensor.shape)
     actual = struct.unpack(fmt, getattr(tensor, expected_payload).array)
     self.assertEqual(scalar, actual)
+
+  def test_pack_scalar_protos(self):
+    scalar = struct_pb2.Value(string_value='my message')
+    tensor = tensor_utils.pack_tensor(scalar)
+    self.assertEqual([], tensor.shape)
+    self.assertLen(tensor.protos.array, 1)
+    unpacked = struct_pb2.Value()
+    self.assertTrue(tensor.protos.array[0].Unpack(unpacked))
+    self.assertEqual(scalar, unpacked)
+
+  def test_pack_scalar_any_proto(self):
+    scalar = struct_pb2.Value(string_value='my message')
+    scalar_any = any_pb2.Any()
+    scalar_any.Pack(scalar)
+    tensor = tensor_utils.pack_tensor(scalar_any)
+    self.assertEqual([], tensor.shape)
+    self.assertLen(tensor.protos.array, 1)
+    unpacked = struct_pb2.Value()
+    self.assertTrue(tensor.protos.array[0].Unpack(unpacked))
+    self.assertEqual(scalar, unpacked)
 
   @parameterized.parameters(
       (25, np.float32, 'floats'),
@@ -101,6 +123,19 @@ class PackTensorTests(parameterized.TestCase):
     self.assertEqual([2], tensor.shape)
     packed_array = getattr(tensor, expected_payload).array
     np.testing.assert_array_equal(array, packed_array)
+
+  def test_pack_proto_arrays(self):
+    array = np.array([
+        struct_pb2.Value(string_value=message)
+        for message in ['foo', 'bar']
+    ])
+    tensor = tensor_utils.pack_tensor(array)
+    self.assertEqual([2], tensor.shape)
+    unpacked = struct_pb2.Value()
+    tensor.protos.array[0].Unpack(unpacked)
+    self.assertEqual(array[0], unpacked)
+    tensor.protos.array[1].Unpack(unpacked)
+    self.assertEqual(array[1], unpacked)
 
   def test_packed_rowmajor(self):
     array2d = np.array([[1, 2], [3, 4], [5, 6]], dtype=np.int32)
@@ -181,6 +216,14 @@ class UnpackTensorTests(parameterized.TestCase):
     round_trip = tensor_utils.unpack_tensor(tensor)
     self.assertEqual(scalar, round_trip)
 
+  def test_unpack_scalar_proto(self):
+    scalar = struct_pb2.Value(string_value='my message')
+    tensor = tensor_utils.pack_tensor(scalar)
+
+    unpacked = struct_pb2.Value()
+    tensor_utils.unpack_tensor(tensor).Unpack(unpacked)
+    self.assertEqual(scalar, unpacked)
+
   @parameterized.parameters(
       ([np.float32(2.5), np.float32(3.5)],),
       ([np.float64(2.5), np.float64(3.5)],),
@@ -197,6 +240,20 @@ class UnpackTensorTests(parameterized.TestCase):
     tensor = tensor_utils.pack_tensor(array)
     round_trip = tensor_utils.unpack_tensor(tensor)
     np.testing.assert_array_equal(array, round_trip)
+
+  def test_unpack_proto_arrays(self):
+    array = np.array([
+        struct_pb2.Value(string_value=message)
+        for message in ['foo', 'bar']
+    ])
+    tensor = tensor_utils.pack_tensor(array)
+    round_trip = tensor_utils.unpack_tensor(tensor)
+
+    unpacked = struct_pb2.Value()
+    round_trip[0].Unpack(unpacked)
+    self.assertEqual(array[0], unpacked)
+    round_trip[1].Unpack(unpacked)
+    self.assertEqual(array[1], unpacked)
 
   def test_unpack_multidimensional_arrays(self):
     tensor = dm_env_rpc_pb2.Tensor()
@@ -324,9 +381,9 @@ class DataTypeToNpTypeTests(absltest.TestCase):
         np.float32,
         tensor_utils.data_type_to_np_type(dm_env_rpc_pb2.DataType.FLOAT))
 
-  def test_proto_type(self):
-    with self.assertRaises(TypeError):
-      tensor_utils.data_type_to_np_type(dm_env_rpc_pb2.DataType.PROTO)
+  def test_empty_object_list(self):
+    tensor = tensor_utils.pack_tensor(np.array([], dtype=np.object))
+    self.assertEqual([0], tensor.shape)
 
   def test_unknown_type(self):
     with self.assertRaises(TypeError):
