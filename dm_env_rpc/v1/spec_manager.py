@@ -21,10 +21,15 @@ from dm_env_rpc.v1 import tensor_utils
 
 def _assert_shapes_match(tensor, dm_env_rpc_spec):
   """Raises ValueError if shape of tensor and spec don't match."""
-  if not np.array_equal(tensor.shape, dm_env_rpc_spec.shape):
+  tensor_shape = np.asarray(tensor.shape)
+  spec_shape = np.asarray(dm_env_rpc_spec.shape)
+
+  # Check all elements are equal, or the spec element is -1 (variable length).
+  if tensor_shape.size != spec_shape.size or not np.all(
+      (tensor_shape == spec_shape) | (spec_shape < 0)):
     raise ValueError(
         'Received dm_env_rpc tensor {} with shape {} but spec has shape {}.'
-        .format(dm_env_rpc_spec.name, tensor.shape, dm_env_rpc_spec.shape))
+        .format(dm_env_rpc_spec.name, tensor_shape, spec_shape))
 
 
 class SpecManager(object):
@@ -42,6 +47,12 @@ class SpecManager(object):
       specs: A dict mapping UIDs to dm_env_rpc TensorSpecs, similar to what is
         stored in `actions` and `observations` in ActionObservationSpecs.
     """
+    for spec in specs.values():
+      if np.count_nonzero(np.asarray(spec.shape) < 0) > 1:
+        raise ValueError(
+            f'"{spec.name}" shape has > 1 variable length dimension. '
+            f'Spec:\n{spec}')
+
     self._name_to_uid = {
         spec.name: uid for uid, spec in specs.items()
     }

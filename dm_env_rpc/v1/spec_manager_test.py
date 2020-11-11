@@ -135,6 +135,48 @@ class SpecManagerTests(absltest.TestCase):
           {55: tensor_utils.pack_tensor([1, 2, 3], dtype=np.float32)})
 
 
+class SpecManagerVariableSpecShapeTests(absltest.TestCase):
+
+  def setUp(self):
+    super(SpecManagerVariableSpecShapeTests, self).setUp()
+    specs = {
+        101:
+            dm_env_rpc_pb2.TensorSpec(
+                name='foo', shape=[1, -1], dtype=dm_env_rpc_pb2.DataType.INT32),
+    }
+    self._spec_manager = spec_manager.SpecManager(specs)
+
+  def test_variable_spec_shape(self):
+    packed = self._spec_manager.pack({'foo': [[1, 2, 3, 4]]})
+    expected = {
+        101: tensor_utils.pack_tensor([[1, 2, 3, 4]], dtype=np.int32),
+    }
+    self.assertDictEqual(expected, packed)
+
+  def test_invalid_variable_shape(self):
+    with self.assertRaisesRegex(ValueError, 'shape'):
+      self._spec_manager.pack({'foo': np.ones((1, 2, 3), dtype=np.int32)})
+
+  def test_empty_variable_shape(self):
+    manager = spec_manager.SpecManager({
+        1:
+            dm_env_rpc_pb2.TensorSpec(
+                name='bar', shape=[], dtype=dm_env_rpc_pb2.DataType.INT32)
+    })
+    with self.assertRaisesRegex(ValueError, 'shape'):
+      manager.pack({'bar': np.ones((1), dtype=np.int32)})
+
+  def test_invalid_variable_spec_shape(self):
+    with self.assertRaisesRegex(ValueError, 'shape has > 1 variable length'):
+      spec_manager.SpecManager({
+          1:
+              dm_env_rpc_pb2.TensorSpec(
+                  name='bar',
+                  shape=[1, -1, -1],
+                  dtype=dm_env_rpc_pb2.DataType.INT32)
+      })
+
+
 class SpecManagerConstructorTests(absltest.TestCase):
 
   def test_duplicate_names_raise_error(self):
