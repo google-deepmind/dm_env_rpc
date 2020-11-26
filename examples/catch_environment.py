@@ -20,6 +20,7 @@ from google.rpc import status_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import spec_manager
+from dm_env_rpc.v1 import tensor_spec_utils
 
 _ACTION_PADDLE = 'paddle'
 _DEFAULT_ACTION = 0
@@ -29,6 +30,7 @@ _NUM_COLUMNS = 10
 _OBSERVATION_REWARD = 'reward'
 _OBSERVATION_BOARD = 'board'
 _WORLD_NAME = 'catch'
+_VALID_ACTIONS = [-1, 0, 1]
 
 
 class CatchGame(object):
@@ -128,11 +130,13 @@ def _observation_spec():
 
 def _action_spec():
   """Returns the action spec."""
-  return {
-      1:
-          dm_env_rpc_pb2.TensorSpec(
-              dtype=dm_env_rpc_pb2.INT8, name=_ACTION_PADDLE)
-  }
+  paddle_action_spec = dm_env_rpc_pb2.TensorSpec(
+      dtype=dm_env_rpc_pb2.INT8, name=_ACTION_PADDLE)
+  tensor_spec_utils.set_bounds(
+      paddle_action_spec,
+      minimum=np.min(_VALID_ACTIONS),
+      maximum=np.max(_VALID_ACTIONS))
+  return {1: paddle_action_spec}
 
 
 class CatchGameFactory(object):
@@ -211,6 +215,9 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
             unpacked_actions = action_manager.unpack(internal_request.actions)
             paddle_action = unpacked_actions.get(_ACTION_PADDLE,
                                                  _DEFAULT_ACTION)
+            if paddle_action not in _VALID_ACTIONS:
+              raise RuntimeError(
+                  f'Invalid paddle action value: "{paddle_action}"!')
             env.update(paddle_action)
 
           response = dm_env_rpc_pb2.StepResponse()
