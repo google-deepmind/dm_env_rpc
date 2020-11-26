@@ -96,51 +96,44 @@ def main(_):
 
   server, port = _start_server()
 
-  with grpc.secure_channel(f'localhost:{port}',
-                           grpc.local_channel_credentials()) as channel:
-    grpc.channel_ready_future(channel).result()
-    with dm_env_rpc_connection.Connection(channel) as connection:
-      response = connection.send(dm_env_rpc_pb2.CreateWorldRequest())
-      world_name = response.world_name
-      response = connection.send(
-          dm_env_rpc_pb2.JoinWorldRequest(world_name=world_name))
-      specs = response.specs
+  with dm_env_rpc_connection.create_secure_channel_and_connect(
+      f'localhost:{port}') as connection:
+    env, world_name = dm_env_adaptor.create_and_join_world(
+        connection, create_world_settings={}, join_world_settings={})
+    with env:
+      window_surface = pygame.display.set_mode((800, 600), 0, 32)
+      pygame.display.set_caption('Catch Human Agent')
 
-      with dm_env_adaptor.DmEnvAdaptor(connection, specs) as dm_env:
-        window_surface = pygame.display.set_mode((800, 600), 0, 32)
-        pygame.display.set_caption('Catch Human Agent')
+      keep_running = True
+      while keep_running:
+        requested_action = _ACTION_NOTHING
 
-        keep_running = True
-        while keep_running:
-          requested_action = _ACTION_NOTHING
-
-          for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for event in pygame.event.get():
+          if event.type == pygame.QUIT:
+            keep_running = False
+            break
+          elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+              requested_action = _ACTION_LEFT
+            elif event.key == pygame.K_RIGHT:
+              requested_action = _ACTION_RIGHT
+            elif event.key == pygame.K_ESCAPE:
               keep_running = False
               break
-            elif event.type == pygame.KEYDOWN:
-              if event.key == pygame.K_LEFT:
-                requested_action = _ACTION_LEFT
-              elif event.key == pygame.K_RIGHT:
-                requested_action = _ACTION_RIGHT
-              elif event.key == pygame.K_ESCAPE:
-                keep_running = False
-                break
 
-          actions = {_ACTION_PADDLE: requested_action}
-          step_result = dm_env.step(actions)
+        actions = {_ACTION_PADDLE: requested_action}
+        step_result = env.step(actions)
 
-          board = step_result.observation[_OBSERVATION_BOARD]
-          reward = step_result.observation[_OBSERVATION_REWARD]
+        board = step_result.observation[_OBSERVATION_BOARD]
+        reward = step_result.observation[_OBSERVATION_REWARD]
 
-          _render_window(board, window_surface, reward)
+        _render_window(board, window_surface, reward)
 
-          pygame.display.update()
+        pygame.display.update()
 
-          pygame.time.wait(_FRAME_DELAY_MS)
+        pygame.time.wait(_FRAME_DELAY_MS)
 
-      connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
-      connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
+    connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
 
   server.stop(None)
 
