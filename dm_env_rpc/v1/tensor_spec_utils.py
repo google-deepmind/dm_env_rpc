@@ -154,20 +154,6 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
   has_min = minimum is not None
   has_max = maximum is not None
 
-  if has_min:
-    minimum = np.asarray(minimum)
-    if minimum.size != 1 and minimum.shape != tuple(tensor_spec.shape):
-      raise ValueError(
-          f'minimum has shape {minimum.shape}, which is incompatible with '
-          f"tensor_spec {tensor_spec.name}'s shape {tensor_spec.shape}.")
-
-  if has_max:
-    maximum = np.asarray(maximum)
-    if maximum.size != 1 and maximum.shape != tuple(tensor_spec.shape):
-      raise ValueError(
-          f'maximum has shape {maximum.shape}, which is incompatible with '
-          f"tensor_spec {tensor_spec.name}'s shape {tensor_spec.shape}.")
-
   if ((has_min and not _can_cast(minimum, np_type)) or
       (has_max and not _can_cast(maximum, np_type))):
     raise ValueError(
@@ -176,6 +162,20 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
             minimum=minimum,
             maximum=maximum,
             dtype=dm_env_rpc_pb2.DataType.Name(tensor_spec.dtype)))
+
+  if has_min:
+    minimum = np.asarray(minimum, dtype=np_type)
+    if minimum.size != 1 and minimum.shape != tuple(tensor_spec.shape):
+      raise ValueError(
+          f'minimum has shape {minimum.shape}, which is incompatible with '
+          f"tensor_spec {tensor_spec.name}'s shape {tensor_spec.shape}.")
+
+  if has_max:
+    maximum = np.asarray(maximum, dtype=np_type)
+    if maximum.size != 1 and maximum.shape != tuple(tensor_spec.shape):
+      raise ValueError(
+          f'maximum has shape {maximum.shape}, which is incompatible with '
+          f"tensor_spec {tensor_spec.name}'s shape {tensor_spec.shape}.")
 
   if (has_min and has_max and np.any(maximum < minimum)):
     raise ValueError('TensorSpec "{}" has min {} larger than max {}.'.format(

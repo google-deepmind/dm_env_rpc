@@ -279,6 +279,14 @@ class SetBoundsTests(parameterized.TestCase):
     self.assertEqual([1], tensor_spec.min.int32s.array)
     self.assertEqual([2], tensor_spec.max.int32s.array)
 
+  def test_set_scalar_bounds_int8(self):
+    tensor_spec = dm_env_rpc_pb2.TensorSpec(dtype=dm_env_rpc_pb2.DataType.INT8)
+    minimum = 1
+    maximum = 2
+    tensor_spec_utils.set_bounds(tensor_spec, minimum=minimum, maximum=maximum)
+    self.assertEqual(np.int8(minimum).tobytes(), tensor_spec.min.int8s.array)
+    self.assertEqual(np.int8(maximum).tobytes(), tensor_spec.max.int8s.array)
+
   def test_set_multiple_bounds(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec(
         name='test', shape=(2,), dtype=dm_env_rpc_pb2.DataType.INT32)
