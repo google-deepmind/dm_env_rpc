@@ -21,6 +21,7 @@ import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import error
+from dm_env_rpc.v1 import tensor_spec_utils
 
 
 def _find_duplicates(iterable):
@@ -41,23 +42,10 @@ def _check_tensor_spec(tensor_spec):
     raise ValueError(
         f'"{tensor_spec.name}" has shape {tensor_spec.shape} which has more '
         'than one negative element.')
-
   min_type = tensor_spec.min and tensor_spec.min.WhichOneof('payload')
-  if min_type and min_type != tensor_spec.dtype:
-    raise ValueError(
-        f'"{tensor_spec.name}".min has type {min_type} but tensor_spec has '
-        f'dtype {tensor_spec.dtype}.')
-
   max_type = tensor_spec.max and tensor_spec.max.WhichOneof('payload')
-  if max_type and max_type != tensor_spec.dtype:
-    raise ValueError(
-        f'"{tensor_spec.name}".max has type {max_type} but tensor_spec has '
-        f'dtype {tensor_spec.dtype}.')
-
-  if (min_type and max_type and tensor_spec.min.value > tensor_spec.max.value):
-    raise ValueError(
-        f'"{tensor_spec.name}" has min value {tensor_spec.min.value} which is '
-        'greater than max value {tensor_spec.max.value}.')
+  if min_type or max_type:
+    _ = tensor_spec_utils.bounds(tensor_spec)
 
 
 class JoinLeaveWorld(absltest.TestCase, metaclass=abc.ABCMeta):
