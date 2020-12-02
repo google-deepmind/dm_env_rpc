@@ -139,6 +139,17 @@ def _action_spec():
   return {1: paddle_action_spec}
 
 
+def _validate_settings(settings, valid_settings):
+  """"Validate the provided settings with list of valid setting keys."""
+  unrecognized_settings = [
+      setting for setting in settings if setting not in valid_settings
+  ]
+
+  if unrecognized_settings:
+    raise ValueError('Unrecognized settings provided! Invalid settings:'
+                     f' {unrecognized_settings}')
+
+
 class CatchGameFactory(object):
   """Factory for creating new CatchGame instances."""
 
@@ -188,10 +199,12 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
         _check_message_type(env, is_joined, message_type)
 
         if message_type == 'create_world':
+          _validate_settings(request.create_world.settings, valid_settings=[])
           env = env_factory.new_game()
           skip_next_frame = True
           response = dm_env_rpc_pb2.CreateWorldResponse(world_name=_WORLD_NAME)
         elif message_type == 'join_world':
+          _validate_settings(request.join_world.settings, valid_settings=[])
           if is_joined:
             raise RuntimeError(
                 f'Tried to join world "{internal_request.world_name}" but '
@@ -238,6 +251,7 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
             env = env_factory.new_game()
             skip_next_frame = True
         elif message_type == 'reset':
+          _validate_settings(request.reset.settings, valid_settings=[])
           env = env_factory.new_game()
           skip_next_frame = True
           response = dm_env_rpc_pb2.ResetResponse()
@@ -246,6 +260,7 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
           for uid, observation in _observation_spec().items():
             response.specs.observations[uid].CopyFrom(observation)
         elif message_type == 'reset_world':
+          _validate_settings(request.reset_world.settings, valid_settings=[])
           env = env_factory.new_game()
           skip_next_frame = True
           response = dm_env_rpc_pb2.ResetWorldResponse()

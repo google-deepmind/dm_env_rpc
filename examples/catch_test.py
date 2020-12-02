@@ -29,6 +29,7 @@ from dm_env_rpc.v1 import dm_env_adaptor
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import error
+from dm_env_rpc.v1 import tensor_utils
 
 
 class ServerConnection:
@@ -108,7 +109,7 @@ class CatchDmEnvRpcCreateAndDestoryWorldTest(compliance.CreateDestroyWorld):
   @property
   def invalid_world_settings(self):
     """World creation settings which are invalid in some way."""
-    return {}
+    return {'invalid_setting': tensor_utils.pack_tensor(123)}
 
   @property
   def has_multiple_world_support(self):
@@ -133,6 +134,10 @@ class CatchDmEnvRpcJoinAndLeaveWorldTest(compliance.JoinLeaveWorld):
   @property
   def world_name(self):
     return self._world_name
+
+  @property
+  def invalid_join_settings(self):
+    return {'invalid_setting': tensor_utils.pack_tensor(123)}
 
   def setUp(self):
     self._server_connection = ServerConnection()

@@ -59,7 +59,7 @@ class JoinLeaveWorld(absltest.TestCase, metaclass=abc.ABCMeta):
   @property
   def invalid_join_settings(self):
     """A list of dicts of Join World settings which are invalid in some way."""
-    return []
+    return {}
 
   @abc.abstractproperty
   def world_name(self):
@@ -105,10 +105,13 @@ class JoinLeaveWorld(absltest.TestCase, metaclass=abc.ABCMeta):
 
   def test_cannot_join_world_with_invalid_settings(self):
     settings = self.required_join_settings
-    for invalid_settings in self.invalid_join_settings:
+    for name, tensor in self.invalid_join_settings.items():
       with self.assertRaises(error.DmEnvRpcError):
-        self.join_world(world_name=self.world_name,
-                        settings={**settings, **invalid_settings})
+        self.join_world(
+            world_name=self.world_name, settings={
+                name: tensor,
+                **settings
+            })
 
   def test_cannot_join_world_twice(self):
     self.join_world(
