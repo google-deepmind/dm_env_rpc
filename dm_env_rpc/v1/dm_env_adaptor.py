@@ -283,13 +283,14 @@ def join_world(
             tensor_utils.pack_tensor(value))
       for key, value in join_world_settings.items()
   }
+  specs = connection.send(
+      dm_env_rpc_pb2.JoinWorldRequest(
+          world_name=world_name, settings=join_world_settings)).specs
+
   try:
-    specs = connection.send(
-        dm_env_rpc_pb2.JoinWorldRequest(
-            world_name=world_name, settings=join_world_settings)).specs
     return DmEnvAdaptor(
         connection, specs, requested_observations, extensions=extensions)
-  except error.DmEnvRpcError:
+  except ValueError:
     connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
     raise
 
@@ -331,6 +332,6 @@ def create_and_join_world(
     return return_type(
         join_world(connection, world_name, join_world_settings,
                    requested_observations, extensions), world_name)
-  except error.DmEnvRpcError:
+  except (error.DmEnvRpcError, ValueError):
     connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
     raise

@@ -586,18 +586,63 @@ class CreateJoinHelpers(absltest.TestCase):
         extensions={'extension': _ExampleExtension()})
     self.assertEqual('bar', env.extension.foo())
 
+  def test_create_join_world_with_invalid_extension(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(side_effect=[
+        dm_env_rpc_pb2.CreateWorldResponse(world_name='foo'),
+        dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_SPEC),
+        dm_env_rpc_pb2.LeaveWorldResponse(),
+        dm_env_rpc_pb2.DestroyWorldRequest()
+    ])
+
+    with self.assertRaisesRegex(ValueError,
+                                'DmEnvAdaptor already has attribute'):
+      _ = dm_env_adaptor.create_and_join_world(
+          connection,
+          create_world_settings={},
+          join_world_settings={},
+          extensions={'step': object()})
+
+    connection.send.assert_has_calls([
+        mock.call(dm_env_rpc_pb2.CreateWorldRequest()),
+        mock.call(dm_env_rpc_pb2.JoinWorldRequest(world_name='foo')),
+        mock.call(dm_env_rpc_pb2.LeaveWorldRequest()),
+        mock.call(dm_env_rpc_pb2.DestroyWorldRequest(world_name='foo'))
+    ])
+
   def test_created_but_failed_to_join_world(self):
     connection = mock.MagicMock()
     connection.send = mock.MagicMock(
         side_effect=(
             dm_env_rpc_pb2.CreateWorldResponse(world_name='Damogran_01'),
             error.DmEnvRpcError(status_pb2.Status(message='Failed to Join.')),
-            dm_env_rpc_pb2.LeaveWorldResponse(),
             dm_env_rpc_pb2.DestroyWorldResponse()))
 
     with self.assertRaisesRegex(error.DmEnvRpcError, 'Failed to Join'):
       _ = dm_env_adaptor.create_and_join_world(
           connection, create_world_settings={}, join_world_settings={})
+
+    connection.send.assert_has_calls([
+        mock.call(dm_env_rpc_pb2.CreateWorldRequest()),
+        mock.call(dm_env_rpc_pb2.JoinWorldRequest(world_name='Damogran_01')),
+        mock.call(dm_env_rpc_pb2.DestroyWorldRequest(world_name='Damogran_01'))
+    ])
+
+  def test_created_and_joined_but_adaptor_failed(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(
+        side_effect=(
+            dm_env_rpc_pb2.CreateWorldResponse(world_name='Damogran_01'),
+            dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_SPEC),
+            dm_env_rpc_pb2.LeaveWorldResponse(),
+            dm_env_rpc_pb2.DestroyWorldResponse()))
+
+    with self.assertRaisesRegex(ValueError, 'Unsupported observations'):
+      _ = dm_env_adaptor.create_and_join_world(
+          connection,
+          create_world_settings={},
+          join_world_settings={},
+          requested_observations=['invalid_observation'])
 
     connection.send.assert_has_calls([
         mock.call(dm_env_rpc_pb2.CreateWorldRequest()),
