@@ -205,6 +205,55 @@ class CatchDmEnvTest(test_utils.EnvironmentTestMixin, absltest.TestCase):
     return self._dm_env
 
 
+class CatchTestSettings(absltest.TestCase):
+
+  def setUp(self):
+    super().setUp()
+
+    self._server_connection = ServerConnection()
+    self._connection = self._server_connection.connection
+    self._world_name = None
+
+  def tearDown(self):
+    try:
+      if self._world_name:
+        self._connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
+        self._connection.send(
+            dm_env_rpc_pb2.DestroyWorldRequest(world_name=self._world_name))
+    finally:
+      self._server_connection.close()
+    super().tearDown()
+
+  def test_reset_world_seed_setting(self):
+    self._world_name = self._connection.send(
+        dm_env_rpc_pb2.CreateWorldRequest(
+            settings={'seed': tensor_utils.pack_tensor(1234)})).world_name
+    self._connection.send(
+        dm_env_rpc_pb2.JoinWorldRequest(world_name=self._world_name))
+
+    step_response = self._connection.send(dm_env_rpc_pb2.StepRequest())
+    self._connection.send(
+        dm_env_rpc_pb2.ResetWorldRequest(
+            world_name=self._world_name,
+            settings={'seed': tensor_utils.pack_tensor(1234)}))
+    self.assertEqual(step_response,
+                     self._connection.send(dm_env_rpc_pb2.StepRequest()))
+
+  def test_reset_seed_setting(self):
+    self._world_name = self._connection.send(
+        dm_env_rpc_pb2.CreateWorldRequest(
+            settings={'seed': tensor_utils.pack_tensor(1234)})).world_name
+    self._connection.send(
+        dm_env_rpc_pb2.JoinWorldRequest(world_name=self._world_name))
+
+    step_response = self._connection.send(dm_env_rpc_pb2.StepRequest())
+    self._connection.send(
+        dm_env_rpc_pb2.ResetRequest(
+            settings={'seed': tensor_utils.pack_tensor(1234)}))
+    self.assertEqual(step_response,
+                     self._connection.send(dm_env_rpc_pb2.StepRequest()))
+
+
 class CatchTest(absltest.TestCase):
 
   def setUp(self):

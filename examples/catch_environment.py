@@ -21,6 +21,7 @@ from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import spec_manager
 from dm_env_rpc.v1 import tensor_spec_utils
+from dm_env_rpc.v1 import tensor_utils
 
 _ACTION_PADDLE = 'paddle'
 _DEFAULT_ACTION = 0
@@ -31,6 +32,7 @@ _OBSERVATION_REWARD = 'reward'
 _OBSERVATION_BOARD = 'board'
 _WORLD_NAME = 'catch'
 _VALID_ACTIONS = [-1, 0, 1]
+_VALID_CREATE_AND_RESET_SETTINGS = ['seed']
 
 
 class CatchGame(object):
@@ -161,6 +163,9 @@ class CatchGameFactory(object):
     self._seed += 1
     return env
 
+  def reset_seed(self, seed):
+    self._seed = seed
+
 
 class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
   """Runs the Catch game as a gRPC EnvironmentServicer."""
@@ -199,7 +204,12 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
         _check_message_type(env, is_joined, message_type)
 
         if message_type == 'create_world':
-          _validate_settings(request.create_world.settings, valid_settings=[])
+          _validate_settings(
+              request.create_world.settings,
+              valid_settings=_VALID_CREATE_AND_RESET_SETTINGS)
+          seed = request.create_world.settings.get('seed', None)
+          if seed is not None:
+            env_factory.reset_seed(tensor_utils.unpack_tensor(seed))
           env = env_factory.new_game()
           skip_next_frame = True
           response = dm_env_rpc_pb2.CreateWorldResponse(world_name=_WORLD_NAME)
@@ -251,7 +261,12 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
             env = env_factory.new_game()
             skip_next_frame = True
         elif message_type == 'reset':
-          _validate_settings(request.reset.settings, valid_settings=[])
+          _validate_settings(
+              request.reset.settings,
+              valid_settings=_VALID_CREATE_AND_RESET_SETTINGS)
+          seed = request.reset.settings.get('seed', None)
+          if seed is not None:
+            env_factory.reset_seed(tensor_utils.unpack_tensor(seed))
           env = env_factory.new_game()
           skip_next_frame = True
           response = dm_env_rpc_pb2.ResetResponse()
@@ -260,7 +275,12 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
           for uid, observation in _observation_spec().items():
             response.specs.observations[uid].CopyFrom(observation)
         elif message_type == 'reset_world':
-          _validate_settings(request.reset_world.settings, valid_settings=[])
+          _validate_settings(
+              request.reset_world.settings,
+              valid_settings=_VALID_CREATE_AND_RESET_SETTINGS)
+          seed = request.reset_world.settings.get('seed', None)
+          if seed is not None:
+            env_factory.reset_seed(tensor_utils.unpack_tensor(seed))
           env = env_factory.new_game()
           skip_next_frame = True
           response = dm_env_rpc_pb2.ResetWorldResponse()
