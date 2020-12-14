@@ -1,5 +1,11 @@
 # Release Notes
 
+## [1.0.4]
+
+*   Better support for variable sized tensors.
+*   Support for packing/unpacking tensors that use `Any` protobuf messages.
+*   Bug fixes.
+
 ## [1.0.3]
 
 ### Added
