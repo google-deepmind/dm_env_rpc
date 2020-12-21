@@ -13,10 +13,6 @@
 # limitations under the License.
 # ============================================================================
 """Compliance test base classes for dm_env_rpc."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from dm_env_rpc.v1.compliance import create_destroy_world
 from dm_env_rpc.v1.compliance import join_leave_world
 from dm_env_rpc.v1.compliance import reset
