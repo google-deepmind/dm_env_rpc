@@ -126,7 +126,7 @@ setup(
     python_requires='>=3.5',
     setup_requires=['grpcio-tools'],
     extras_require={
-        'examples': ['pygame', 'portpicker'],
+        'examples': ['pygame'],
     },
     cmdclass={
         'build_ext': _BuildExt,
