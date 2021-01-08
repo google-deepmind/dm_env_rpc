@@ -89,9 +89,8 @@ class Connection(object):
     """Sends the given request to the dm_env_rpc server and returns the response.
 
     The request should be an instance of one of the dm_env_rpc Request messages,
-    such
-    as CreateWorldRequest.  Based on the type the correct payload for the
-    EnvironmentRequest will be constructed and set to the dm_env_rpc server.
+    such as CreateWorldRequest. Based on the type the correct payload for the
+    EnvironmentRequest will be constructed and sent to the dm_env_rpc server.
 
     Blocks until the server sends back its response.
 
