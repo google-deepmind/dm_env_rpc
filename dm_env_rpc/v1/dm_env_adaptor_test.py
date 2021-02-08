@@ -481,6 +481,21 @@ class EnvironmentNestedActionsObservations(absltest.TestCase):
 
 class CreateJoinHelpers(absltest.TestCase):
 
+  def test_create_world(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(
+        return_value=dm_env_rpc_pb2.CreateWorldResponse(
+            world_name='Damogran_01'))
+
+    world_name = dm_env_adaptor.create_world(connection, {'planet': 'Damogran'})
+    self.assertEqual('Damogran_01', world_name)
+
+    connection.send.assert_called_once_with(
+        text_format.Parse(
+            """settings: {
+                key: 'planet', value: { strings: { array: 'Damogran' } }
+            }""", dm_env_rpc_pb2.CreateWorldRequest()))
+
   def test_join_world(self):
     connection = mock.MagicMock()
     connection.send = mock.MagicMock(

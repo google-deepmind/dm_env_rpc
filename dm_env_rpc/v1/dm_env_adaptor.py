@@ -255,6 +255,30 @@ class DmEnvAdaptor(dm_env.Environment):
     self._connection = None
 
 
+def create_world(
+    connection: dm_env_rpc_connection.Connection,
+    create_world_settings: Mapping[str, Any]) -> str:
+  """Helper function to create a world with the provided settings.
+
+  Args:
+    connection: An instance of Connection already connected to a dm_env_rpc
+      server.
+    create_world_settings: Settings used to create the world. Values must be
+      packable into a Tensor proto or already packed.
+  Returns:
+    Created world name.
+  """
+
+  create_world_settings = {
+      key: (value if isinstance(value, dm_env_rpc_pb2.Tensor) else
+            tensor_utils.pack_tensor(value))
+      for key, value in create_world_settings.items()
+  }
+  return connection.send(
+      dm_env_rpc_pb2.CreateWorldRequest(
+          settings=create_world_settings)).world_name
+
+
 def join_world(
     connection: dm_env_rpc_connection.Connection,
     world_name: str,
@@ -318,14 +342,7 @@ def create_and_join_world(
   Returns:
     Tuple of DmEnvAdaptor and the created world name.
   """
-  create_world_settings = {
-      key: (value if isinstance(value, dm_env_rpc_pb2.Tensor) else
-            tensor_utils.pack_tensor(value))
-      for key, value in create_world_settings.items()
-  }
-  world_name = connection.send(
-      dm_env_rpc_pb2.CreateWorldRequest(
-          settings=create_world_settings)).world_name
+  world_name = create_world(connection, create_world_settings)
   try:
     return_type = collections.namedtuple('DmEnvAndWorldName',
                                          ['env', 'world_name'])
