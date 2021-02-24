@@ -87,8 +87,8 @@ class CreateDestroyWorld(absltest.TestCase, metaclass=abc.ABCMeta):
     try:
       world1_name = self.create_world(self.required_world_settings)
       world2_name = self.create_world(self.required_world_settings)
-      self.assertNotNone(world1_name)
-      self.assertNotNone(world2_name)
+      self.assertIsNotNone(world1_name)
+      self.assertIsNotNone(world2_name)
       self.assertNotEqual(world1_name, world2_name)
     finally:
       self.destroy_world(world1_name)
