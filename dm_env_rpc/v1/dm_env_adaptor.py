@@ -17,7 +17,7 @@
 import collections
 from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple
 import dm_env
-import frozendict
+import immutabledict
 
 from dm_env_rpc.v1 import connection as dm_env_rpc_connection
 from dm_env_rpc.v1 import dm_env_flatten_utils
@@ -49,13 +49,13 @@ class DmEnvAdaptor(dm_env.Environment):
   # Disable pytype attribute checking for dynamically created extension attrs.
   _HAS_DYNAMIC_ATTRIBUTES = True
 
-  def __init__(self,
-               connection: dm_env_rpc_connection.Connection,
-               specs: dm_env_rpc_pb2.ActionObservationSpecs,
-               requested_observations: Optional[Sequence[str]] = None,
-               nested_tensors: bool = True,
-               extensions: Optional[Mapping[str,
-                                            Any]] = frozendict.frozendict()):
+  def __init__(
+      self,
+      connection: dm_env_rpc_connection.Connection,
+      specs: dm_env_rpc_pb2.ActionObservationSpecs,
+      requested_observations: Optional[Sequence[str]] = None,
+      nested_tensors: bool = True,
+      extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict()):
     """Initializes the environment with the provided dm_env_rpc connection.
 
     Args:
@@ -255,9 +255,8 @@ class DmEnvAdaptor(dm_env.Environment):
     self._connection = None
 
 
-def create_world(
-    connection: dm_env_rpc_connection.Connection,
-    create_world_settings: Mapping[str, Any]) -> str:
+def create_world(connection: dm_env_rpc_connection.Connection,
+                 create_world_settings: Mapping[str, Any]) -> str:
   """Helper function to create a world with the provided settings.
 
   Args:
@@ -265,6 +264,7 @@ def create_world(
       server.
     create_world_settings: Settings used to create the world. Values must be
       packable into a Tensor proto or already packed.
+
   Returns:
     Created world name.
   """
@@ -284,7 +284,7 @@ def join_world(
     world_name: str,
     join_world_settings: Mapping[str, Any],
     requested_observations: Optional[Iterable[str]] = None,
-    extensions: Optional[Mapping[str, Any]] = frozendict.frozendict()
+    extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict()
 ) -> DmEnvAdaptor:
   """Helper function to join a world with the provided settings.
 
@@ -324,7 +324,7 @@ def create_and_join_world(
     create_world_settings: Mapping[str, Any],
     join_world_settings: Mapping[str, Any],
     requested_observations: Optional[Iterable[str]] = None,
-    extensions: Optional[Mapping[str, Any]] = frozendict.frozendict()
+    extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict()
 ) -> Tuple[DmEnvAdaptor, str]:
   """Helper function to create and join a world with the provided settings.
 
