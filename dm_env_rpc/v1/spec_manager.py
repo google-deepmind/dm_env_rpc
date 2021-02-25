@@ -67,6 +67,14 @@ class SpecManager(object):
         spec.name: spec for spec in specs.values()
     }
 
+  @property
+  def specs_by_uid(self):
+    return self._specs_by_uid
+
+  @property
+  def specs_by_name(self):
+    return self._specs_by_name
+
   def name_to_uid(self, name):
     """Returns the UID for the given name."""
     return self._name_to_uid[name]

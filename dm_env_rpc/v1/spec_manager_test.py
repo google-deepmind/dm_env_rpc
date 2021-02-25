@@ -21,20 +21,28 @@ from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import spec_manager
 from dm_env_rpc.v1 import tensor_utils
 
+_EXAMPLE_SPECS = {
+    54:
+        dm_env_rpc_pb2.TensorSpec(
+            name='fuzz', shape=[2], dtype=dm_env_rpc_pb2.DataType.FLOAT),
+    55:
+        dm_env_rpc_pb2.TensorSpec(
+            name='foo', shape=[3], dtype=dm_env_rpc_pb2.DataType.INT32),
+}
+
 
 class SpecManagerTests(absltest.TestCase):
 
   def setUp(self):
     super(SpecManagerTests, self).setUp()
-    specs = {
-        54:
-            dm_env_rpc_pb2.TensorSpec(
-                name='fuzz', shape=[2], dtype=dm_env_rpc_pb2.DataType.FLOAT),
-        55:
-            dm_env_rpc_pb2.TensorSpec(
-                name='foo', shape=[3], dtype=dm_env_rpc_pb2.DataType.INT32),
-    }
-    self._spec_manager = spec_manager.SpecManager(specs)
+    self._spec_manager = spec_manager.SpecManager(_EXAMPLE_SPECS)
+
+  def test_specs_by_uid(self):
+    self.assertDictEqual(_EXAMPLE_SPECS, self._spec_manager.specs_by_uid)
+
+  def test_specs_by_name(self):
+    expected = {'foo': _EXAMPLE_SPECS[55], 'fuzz': _EXAMPLE_SPECS[54]}
+    self.assertDictEqual(expected, self._spec_manager.specs_by_name)
 
   def test_name_to_uid(self):
     self.assertEqual(55, self._spec_manager.name_to_uid('foo'))
