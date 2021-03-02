@@ -421,7 +421,7 @@ class GetPackerTests(absltest.TestCase):
   def test_can_pack(self):
     packer = tensor_utils.get_packer(np.int32)
     tensor = dm_env_rpc_pb2.Tensor()
-    packer.pack(tensor, np.asarray([1, 2, 3]))
+    packer.pack(tensor, np.asarray([1, 2, 3], dtype=np.int32))
     self.assertEqual([1, 2, 3], tensor.int32s.array)
 
   def test_can_unpack(self):
