@@ -99,10 +99,16 @@ def main(argv):
   benchmarks = (
       _PackBenchmark(dtype=np.uint8, shape=(128, 128, 3)),
       _PackBenchmark(dtype=np.int32, shape=(64, 64, 3)),
+      _PackBenchmark(dtype=np.int64, shape=(32, 64, 3)),
+      _PackBenchmark(dtype=np.uint32, shape=(64, 64, 3)),
+      _PackBenchmark(dtype=np.uint64, shape=(32, 64, 3)),
       _PackBenchmark(dtype=np.float32, shape=(64, 64, 3)),
       _PackBenchmark(dtype=np.float64, shape=(32, 64, 3)),
       _UnpackBenchmark(dtype=np.uint8, shape=(128, 128, 3)),
+      _UnpackBenchmark(dtype=np.int32, shape=(64, 64, 3)),
+      _UnpackBenchmark(dtype=np.int64, shape=(32, 64, 3)),
       _UnpackBenchmark(dtype=np.uint32, shape=(64, 64, 3)),
+      _UnpackBenchmark(dtype=np.uint64, shape=(32, 64, 3)),
       _UnpackBenchmark(dtype=np.float32, shape=(64, 64, 3)),
       _UnpackBenchmark(dtype=np.float64, shape=(32, 64, 3)),
   )
