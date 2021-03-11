@@ -320,14 +320,6 @@ class CatchTest(absltest.TestCase):
       self._connection.send(
           dm_env_rpc_pb2.DestroyWorldRequest(world_name='wrong_name'))
 
-  def test_read_property_request_is_not_supported(self):
-    with self.assertRaises(error.DmEnvRpcError):
-      self._connection.send(dm_env_rpc_pb2.ReadPropertyRequest())
-
-  def test_write_property_request_is_not_supported(self):
-    with self.assertRaises(error.DmEnvRpcError):
-      self._connection.send(dm_env_rpc_pb2.WritePropertyRequest())
-
 
 class CatchGameTest(absltest.TestCase):
 
