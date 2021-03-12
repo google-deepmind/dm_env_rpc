@@ -29,8 +29,6 @@ from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import error
 from dm_env_rpc.v1 import tensor_utils
 
-_SUEZ_SERVICE = dm_env_rpc_pb2.DESCRIPTOR.services_by_name['Environment']
-
 _CREATE_REQUEST = dm_env_rpc_pb2.CreateWorldRequest(
     settings={'foo': tensor_utils.pack_tensor('bar')})
 _CREATE_RESPONSE = dm_env_rpc_pb2.CreateWorldResponse()
