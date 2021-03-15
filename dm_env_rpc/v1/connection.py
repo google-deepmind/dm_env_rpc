@@ -100,22 +100,29 @@ class Connection(object):
 
     Returns:
       The response the dm_env_rpc server returned for the given RPC call,
-      unwrapped
-      from the EnvironmentStream message.  For instance if `request` had type
-      `CreateWorldRequest` this returns a message of type `CreateWorldResponse`.
+      unwrapped from the EnvironmentStream message.  For instance if `request`
+      had type `CreateWorldRequest` this returns a message of type
+      `CreateWorldResponse`.
 
     Raises:
       DmEnvRpcError: The dm_env_rpc server responded to the request with an
         error.
+      ValueError: The dm_env_rpc server responded to the request with an
+        unexpected response message.
     """
     field_name = self._type_to_field[type(request).__name__]
     environment_request = dm_env_rpc_pb2.EnvironmentRequest()
     getattr(environment_request, field_name).CopyFrom(request)
     self._stream.write(environment_request)
     response = self._stream.read()
-    if response.HasField('error'):
+    response_field = response.WhichOneof('payload')
+    if response_field == 'error':
       raise error.DmEnvRpcError(response.error)
-    return getattr(response, field_name)
+    elif response_field == field_name:
+      return getattr(response, field_name)
+    else:
+      raise ValueError(f'Unexpected response message! expected: {field_name}, '
+                       f'actual: {response_field}')
 
   def close(self):
     """Closes the connection.  Call when the connection is no longer needed."""

@@ -37,6 +37,11 @@ _BAD_CREATE_REQUEST = dm_env_rpc_pb2.CreateWorldRequest()
 _TEST_ERROR = dm_env_rpc_pb2.EnvironmentResponse(
     error=status_pb2.Status(message='A test error.'))
 
+_INCORRECT_RESPONSE_TEST_MSG = dm_env_rpc_pb2.DestroyWorldRequest(
+    world_name='foo')
+_INCORRECT_RESPONSE = dm_env_rpc_pb2.EnvironmentResponse(
+    leave_world=dm_env_rpc_pb2.LeaveWorldResponse())
+
 _EXTENSION_REQUEST = struct_pb2.Value(string_value='extension request')
 _EXTENSION_RESPONSE = struct_pb2.Value(number_value=555)
 
@@ -58,6 +63,9 @@ _REQUEST_RESPONSE_PAIRS = {
         extension=_wrap_in_any(_EXTENSION_REQUEST)).SerializeToString():
         dm_env_rpc_pb2.EnvironmentResponse(
             extension=_wrap_in_any(_EXTENSION_RESPONSE)),
+    dm_env_rpc_pb2.EnvironmentRequest(
+        destroy_world=_INCORRECT_RESPONSE_TEST_MSG).SerializeToString():
+        _INCORRECT_RESPONSE,
 }
 
 
@@ -115,6 +123,12 @@ class ConnectionTests(absltest.TestCase):
     with self.assertRaises(grpc.FutureTimeoutError):
       dm_env_rpc_connection.create_secure_channel_and_connect(
           'invalid_address', grpc.local_channel_credentials(), timeout=1.)
+
+  def test_incorrect_response(self):
+    with _create_mock_channel() as mock_channel:
+      with dm_env_rpc_connection.Connection(mock_channel) as connection:
+        with self.assertRaisesRegex(ValueError, 'Unexpected response message'):
+          connection.send(_INCORRECT_RESPONSE_TEST_MSG)
 
 
 if __name__ == '__main__':
