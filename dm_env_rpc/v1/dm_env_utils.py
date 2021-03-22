@@ -14,14 +14,18 @@
 # ============================================================================
 """Utilities for interfacing dm_env and dm_env_rpc."""
 
+from typing import Dict
 from dm_env import specs
 import numpy as np
 
+from dm_env_rpc.v1 import dm_env_rpc_pb2
+from dm_env_rpc.v1 import spec_manager as dm_env_rpc_spec_manager
 from dm_env_rpc.v1 import tensor_spec_utils
 from dm_env_rpc.v1 import tensor_utils
 
 
-def tensor_spec_to_dm_env_spec(tensor_spec):
+def tensor_spec_to_dm_env_spec(
+    tensor_spec: dm_env_rpc_pb2.TensorSpec) -> specs.Array:
   """Returns a dm_env spec given a dm_env_rpc TensorSpec.
 
   Args:
@@ -53,7 +57,9 @@ def tensor_spec_to_dm_env_spec(tensor_spec):
         shape=tensor_spec.shape, dtype=np_type, name=tensor_spec.name)
 
 
-def dm_env_spec(spec_manager):
+def dm_env_spec(
+    spec_manager: dm_env_rpc_spec_manager.SpecManager
+) -> Dict[str, specs.Array]:
   """Returns a dm_env spec for the given `spec_manager`.
 
   Args:
