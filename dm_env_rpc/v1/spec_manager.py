@@ -14,12 +14,15 @@
 # ============================================================================
 """Manager class to manage the dm_env_rpc UID system."""
 
+from typing import Any, Collection, Mapping
 import numpy as np
 
+from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import tensor_utils
 
 
-def _assert_shapes_match(tensor, dm_env_rpc_spec):
+def _assert_shapes_match(tensor: dm_env_rpc_pb2.Tensor,
+                         dm_env_rpc_spec: dm_env_rpc_pb2.TensorSpec):
   """Raises ValueError if shape of tensor and spec don't match."""
   tensor_shape = np.asarray(tensor.shape)
   spec_shape = np.asarray(dm_env_rpc_spec.shape)
@@ -40,7 +43,7 @@ class SpecManager(object):
   tensors and string-keyed dicts mapping to scalars, lists, or NumPy arrays.
   """
 
-  def __init__(self, specs):
+  def __init__(self, specs: Mapping[int, dm_env_rpc_pb2.TensorSpec]):
     """Builds the SpecManager from the given dm_env_rpc specs.
 
     Args:
@@ -53,53 +56,50 @@ class SpecManager(object):
             f'"{spec.name}" shape has > 1 variable length dimension. '
             f'Spec:\n{spec}')
 
-    self._name_to_uid = {
-        spec.name: uid for uid, spec in specs.items()
-    }
-    self._uid_to_name = {
-        uid: spec.name for uid, spec in specs.items()
-    }
+    self._name_to_uid = {spec.name: uid for uid, spec in specs.items()}
+    self._uid_to_name = {uid: spec.name for uid, spec in specs.items()}
     if len(self._name_to_uid) != len(self._uid_to_name):
       raise ValueError('There are duplicate names in the tensor specs.')
 
     self._specs_by_uid = specs
-    self._specs_by_name = {
-        spec.name: spec for spec in specs.values()
-    }
+    self._specs_by_name = {spec.name: spec for spec in specs.values()}
 
   @property
-  def specs_by_uid(self):
+  def specs_by_uid(self) -> Mapping[int, dm_env_rpc_pb2.TensorSpec]:
     return self._specs_by_uid
 
   @property
-  def specs_by_name(self):
+  def specs_by_name(self) -> Mapping[str, dm_env_rpc_pb2.TensorSpec]:
     return self._specs_by_name
 
-  def name_to_uid(self, name):
+  def name_to_uid(self, name: str) -> int:
     """Returns the UID for the given name."""
     return self._name_to_uid[name]
 
-  def uid_to_name(self, uid):
+  def uid_to_name(self, uid: int) -> str:
     """Returns the name for the given UID."""
     return self._uid_to_name[uid]
 
-  def name_to_spec(self, name):
+  def name_to_spec(self, name: str) -> dm_env_rpc_pb2.TensorSpec:
     """Returns the dm_env_rpc TensorSpec named `name`."""
     return self._specs_by_name[name]
 
-  def uid_to_spec(self, uid):
+  def uid_to_spec(self, uid: int) -> dm_env_rpc_pb2.TensorSpec:
     """Returns the dm_env_rpc TensorSpec for the given UID."""
     return self._specs_by_uid[uid]
 
-  def names(self):
+  def names(self) -> Collection[str]:
     """Returns the spec names in no particular order."""
     return self._name_to_uid.keys()
 
-  def uids(self):
+  def uids(self) -> Collection[int]:
     """Returns the spec UIDs in no particular order."""
     return self._uid_to_name.keys()
 
-  def unpack(self, dm_env_rpc_tensors):
+  def unpack(
+      self,
+      dm_env_rpc_tensors: Mapping[int,
+                                  dm_env_rpc_pb2.Tensor]) -> Mapping[str, Any]:
     """Unpacks a dm_env_rpc uid-to-tensor map to a name-keyed Python dict.
 
     Args:
@@ -123,7 +123,8 @@ class SpecManager(object):
       unpacked[name] = tensor_unpacked
     return unpacked
 
-  def pack(self, tensors):
+  def pack(self, tensors: Mapping[str,
+                                  Any]) -> Mapping[int, dm_env_rpc_pb2.Tensor]:
     """Packs a name-keyed Python dict to a dm_env_rpc uid-to-tensor map.
 
     Args:
