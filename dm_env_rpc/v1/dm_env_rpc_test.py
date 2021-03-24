@@ -59,15 +59,5 @@ class JoinWorldResponse(absltest.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.FLOAT
 
 
-class ListPropertyResponse(absltest.TestCase):
-
-  def test_setting_response(self):
-    response = dm_env_rpc_pb2.ListPropertyResponse()
-    prop = response.properties['foo']
-    prop.is_readable = True
-    prop.is_writeable = True
-    prop.is_listable = False
-
-
 if __name__ == '__main__':
   absltest.main()
