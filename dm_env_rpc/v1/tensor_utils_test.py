@@ -137,6 +137,10 @@ class PackTensorTests(parameterized.TestCase):
     tensor.protos.array[1].Unpack(unpacked)
     self.assertEqual(array[1], unpacked)
 
+  def test_pack_mixed_proto_array_fails(self):
+    with self.assertRaisesRegex(ValueError, 'not recognized'):
+      tensor_utils.pack_tensor(np.array([struct_pb2.Value(), 1, 2, 3]))
+
   def test_packed_rowmajor(self):
     array2d = np.array([[1, 2], [3, 4], [5, 6]], dtype=np.int32)
     tensor = tensor_utils.pack_tensor(array2d)

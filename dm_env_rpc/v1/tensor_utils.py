@@ -30,10 +30,19 @@ def _pack_any_proto(value):
   """Helper function to pack Any proto, iff it's not already packed."""
   if isinstance(value, any_pb2.Any):
     return value
-  else:
+  elif isinstance(value, message.Message):
     any_proto = any_pb2.Any()
     any_proto.Pack(value)
     return any_proto
+  else:
+    # If we reach this exception, it is normally because the type being packed
+    # is not supported. Raise exception with some typical examples.
+    raise ValueError("Trying to pack an Any proto with a type that's not "
+                     f"recognized! Type: {type(value)}, value: '{value}'. "
+                     'Is the value a jagged iterable? Is the data type not a '
+                     'supported primitive type like strings, floats, integers '
+                     'or protobuf messages? Are all elements in the array the '
+                     'same type?')
 
 
 class Packer(metaclass=abc.ABCMeta):
@@ -287,13 +296,6 @@ def pack_tensor(value, dtype=None, try_compress=False):
   packed = dm_env_rpc_pb2.Tensor()
   value = np.asarray(value)
 
-  # For efficiency, only check that the first element is a protobuf message.
-  if value.dtype == np.object and value.size > 0 and not isinstance(
-      value.item(0), message.Message):
-    raise ValueError('Could not convert value to a tensor of primitive types: '
-                     f'{value}. Are the iterables jagged? Are the data types '
-                     'not primitive scalar types like strings, floats, or '
-                     'integers? Or are the elements not protobuf messages?')
   if dtype is not None:
     value = value.astype(
         dtype=_DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype),
