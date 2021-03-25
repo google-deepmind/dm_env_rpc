@@ -296,11 +296,26 @@ def pack_tensor(value, dtype=None, try_compress=False):
   packed = dm_env_rpc_pb2.Tensor()
   value = np.asarray(value)
 
-  if dtype is not None:
+  if value.dtype == np.object:
+    # Because Numpy doesn't truly support variable-length string arrays, users
+    # tend to use arrays of Numpy objects instead. Iff a user provides an array
+    # of objects and a string dtype argument, automatically convert the value to
+    # an array of strings.
+    if np.issubdtype(
+        _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype), np.str_):
+      for item in value.flat:
+        if not isinstance(item, str):
+          raise TypeError(f'Requested string dtype but not all elements are '
+                          'Python string types. At least one element was '
+                          f'{type(item)}.')
+      value = np.array(value, dtype=np.str_)
+
+  elif dtype is not None:
     value = value.astype(
         dtype=_DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype),
         copy=False,
         casting='same_kind')
+
   packed.shape[:] = value.shape
   packer = _TYPE_TO_PACKER[value.dtype.type]
   if (try_compress and np.all(value == next(value.flat))):

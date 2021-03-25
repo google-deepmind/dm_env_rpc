@@ -155,6 +155,31 @@ class PackTensorTests(parameterized.TestCase):
     with self.assertRaises(ValueError):
       tensor_utils.pack_tensor([[1, 2], [3, 4, 5]])
 
+  @parameterized.parameters(
+      (['foo', 'bar'], np.str_),
+      ('baz', dm_env_rpc_pb2.DataType.STRING),
+      (['foobar'], np.array(['foobar']).dtype),
+  )
+  def test_np_object_strings(self, value, dtype):
+    object_array = np.array(value, dtype=np.object)
+    tensor = tensor_utils.pack_tensor(object_array, dtype=dtype)
+    self.assertEqual(list(object_array.shape), tensor.shape)
+    self.assertTrue(tensor.HasField('strings'))
+
+  def test_np_object_strings_no_dtype_raises_exception(self):
+    with self.assertRaises(ValueError):
+      tensor_utils.pack_tensor(np.array(['foo'], dtype=np.object))
+
+  @parameterized.parameters(
+      (['foo', 42, 'bar'],),
+      ([1, 2, 3],),
+  )
+  def test_np_object_to_strings_fail(self, bad_element):
+    with self.assertRaisesRegex(TypeError,
+                                'not all elements are Python string types'):
+      tensor_utils.pack_tensor(
+          np.array(bad_element, dtype=np.object), dtype=np.str_)
+
   def test_class_instance_throw_exception(self):
 
     class Foo(object):
