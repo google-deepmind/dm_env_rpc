@@ -15,6 +15,7 @@
 # ============================================================================
 
 """Provides custom Pythonic errors for dm_env_rpc error messages."""
+from google.rpc import status_pb2
 
 
 class DmEnvRpcError(Exception):
@@ -23,16 +24,16 @@ class DmEnvRpcError(Exception):
   Wraps a google.rpc.Status message as a Python Exception class.
   """
 
-  def __init__(self, status_proto):
+  def __init__(self, status_proto: status_pb2.Status):
     super().__init__()
     self._status_proto = status_proto
 
   @property
-  def code(self):
+  def code(self) -> int:
     return self._status_proto.code
 
   @property
-  def message(self):
+  def message(self) -> str:
     return self._status_proto.message
 
   def __str__(self):

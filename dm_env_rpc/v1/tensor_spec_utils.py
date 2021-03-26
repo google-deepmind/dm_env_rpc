@@ -31,14 +31,14 @@ _SCALAR_VALUE_TYPES = frozenset(
     ('float', 'double', 'int8', 'int32', 'int64', 'uint8', 'uint32', 'uint64'))
 
 
-def _can_cast(array_or_scalar, np_dtype):
+def _can_cast(array_or_scalar, np_dtype: np.dtype) -> bool:
   for value in np.asarray(array_or_scalar).flat:
     if not np.can_cast(value, np_dtype, casting='safe'):
       return False
   return True
 
 
-def _np_range_info(np_type):
+def _np_range_info(np_type: np.dtype):
   """Returns type info for `np_type`, which includes min and max attributes."""
   if issubclass(np_type, np.floating):
     return np.finfo(np_type)
@@ -80,7 +80,7 @@ def _get_value(min_max_value, shape, default):
   return min_max
 
 
-def bounds(tensor_spec):
+def bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec) -> Bounds:
   """Gets the inclusive bounds of `tensor_spec`.
 
   Args:

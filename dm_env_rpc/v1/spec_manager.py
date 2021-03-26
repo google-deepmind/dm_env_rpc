@@ -14,7 +14,7 @@
 # ============================================================================
 """Manager class to manage the dm_env_rpc UID system."""
 
-from typing import Any, Collection, Mapping
+from typing import Any, Collection, Mapping, MutableMapping
 import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
@@ -65,11 +65,11 @@ class SpecManager(object):
     self._specs_by_name = {spec.name: spec for spec in specs.values()}
 
   @property
-  def specs_by_uid(self) -> Mapping[int, dm_env_rpc_pb2.TensorSpec]:
+  def specs_by_uid(self) -> MutableMapping[int, dm_env_rpc_pb2.TensorSpec]:
     return self._specs_by_uid
 
   @property
-  def specs_by_name(self) -> Mapping[str, dm_env_rpc_pb2.TensorSpec]:
+  def specs_by_name(self) -> MutableMapping[str, dm_env_rpc_pb2.TensorSpec]:
     return self._specs_by_name
 
   def name_to_uid(self, name: str) -> int:
@@ -97,9 +97,8 @@ class SpecManager(object):
     return self._uid_to_name.keys()
 
   def unpack(
-      self,
-      dm_env_rpc_tensors: Mapping[int,
-                                  dm_env_rpc_pb2.Tensor]) -> Mapping[str, Any]:
+      self, dm_env_rpc_tensors: Mapping[int, dm_env_rpc_pb2.Tensor]
+  ) -> MutableMapping[str, Any]:
     """Unpacks a dm_env_rpc uid-to-tensor map to a name-keyed Python dict.
 
     Args:
@@ -123,8 +122,9 @@ class SpecManager(object):
       unpacked[name] = tensor_unpacked
     return unpacked
 
-  def pack(self, tensors: Mapping[str,
-                                  Any]) -> Mapping[int, dm_env_rpc_pb2.Tensor]:
+  def pack(
+      self,
+      tensors: Mapping[str, Any]) -> MutableMapping[int, dm_env_rpc_pb2.Tensor]:
     """Packs a name-keyed Python dict to a dm_env_rpc uid-to-tensor map.
 
     Args:

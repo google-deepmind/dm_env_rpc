@@ -108,11 +108,12 @@ class DmEnvAdaptor(dm_env.Environment):
     # Not strictly necessary but it makes the unit tests deterministic.
     self._requested_observation_uids.sort()
 
-    for extension_name, extension in extensions.items():
-      if hasattr(self, extension_name):
-        raise ValueError(
-            f'DmEnvAdaptor already has attribute "{extension_name}"!')
-      setattr(self, extension_name, extension)
+    if extensions is not None:
+      for extension_name, extension in extensions.items():
+        if hasattr(self, extension_name):
+          raise ValueError(
+              f'DmEnvAdaptor already has attribute "{extension_name}"!')
+        setattr(self, extension_name, extension)
 
   def reset(self):
     """Implements dm_env.Environment.reset."""
