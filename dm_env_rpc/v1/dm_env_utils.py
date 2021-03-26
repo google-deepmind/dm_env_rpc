@@ -32,8 +32,8 @@ def tensor_spec_to_dm_env_spec(
     tensor_spec: A dm_env_rpc TensorSpec protobuf.
 
   Returns:
-    Either a DiscreteArray, BoundedArray or Array, depending on the content of
-    the TensorSpec.
+    Either a DiscreteArray, BoundedArray, StringArray or Array, depending on the
+    content of the TensorSpec.
   """
   np_type = tensor_utils.data_type_to_np_type(tensor_spec.dtype)
   if tensor_spec.HasField('min') or tensor_spec.HasField('max'):
@@ -53,8 +53,11 @@ def tensor_spec_to_dm_env_spec(
           minimum=bounds.min,
           maximum=bounds.max)
   else:
-    return specs.Array(
-        shape=tensor_spec.shape, dtype=np_type, name=tensor_spec.name)
+    if tensor_spec.dtype == dm_env_rpc_pb2.DataType.STRING:
+      return specs.StringArray(shape=tensor_spec.shape, name=tensor_spec.name)
+    else:
+      return specs.Array(
+          shape=tensor_spec.shape, dtype=np_type, name=tensor_spec.name)
 
 
 def dm_env_spec(
@@ -66,8 +69,8 @@ def dm_env_spec(
     spec_manager: An instance of SpecManager.
 
   Returns:
-    A dict mapping names to either dm_env ArraySpecs or BoundedArraySpecs for
-    each named TensorSpec in `spec_manager`.
+    A dict mapping names to either a dm_env Array, BoundedArray, DiscreteArray
+    or StringArray spec for each named TensorSpec in `spec_manager`.
   """
   return {
       name: tensor_spec_to_dm_env_spec(spec_manager.name_to_spec(name))

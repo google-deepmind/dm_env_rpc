@@ -34,6 +34,15 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     self.assertEqual(specs.Array(shape=[3], dtype=np.uint32), actual)
     self.assertEqual('foo', actual.name)
 
+  def test_string_give_string_array(self):
+    tensor_spec = dm_env_rpc_pb2.TensorSpec()
+    tensor_spec.dtype = dm_env_rpc_pb2.DataType.STRING
+    tensor_spec.shape[:] = [1, 2, 3]
+    tensor_spec.name = 'string_spec'
+    actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
+    self.assertEqual(specs.StringArray(shape=[1, 2, 3]), actual)
+    self.assertEqual('string_spec', actual.name)
+
   def test_scalar_with_0_n_bounds_gives_discrete_array(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32

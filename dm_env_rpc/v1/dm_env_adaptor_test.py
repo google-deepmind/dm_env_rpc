@@ -201,6 +201,21 @@ class DmEnvAdaptorTests(absltest.TestCase):
     self.assertIsNone(timestep.discount)
     self.assertEqual({'foo': 5, 'bar': 'goodbye'}, timestep.observation)
 
+  def test_spec_generate_value_step(self):
+    self._connection.send = mock.MagicMock(return_value=_SAMPLE_STEP_RESPONSE)
+    action_spec = self._env.action_spec()
+    actions = {
+        name: spec.generate_value() for name, spec in action_spec.items()
+    }
+    self._env.step(actions)
+    self._connection.send.assert_called_once_with(
+        dm_env_rpc_pb2.StepRequest(
+            requested_observations=[1, 2],
+            actions={
+                1: tensor_utils.pack_tensor(actions['foo']),
+                2: tensor_utils.pack_tensor(actions['bar'], dtype=np.str_)
+            }))
+
   def test_reset_changes_spec_raises_error(self):
     self._connection.send = mock.MagicMock(return_value=_SAMPLE_STEP_RESPONSE)
     self._env.step({'foo': 4, 'bar': 'hello'})
@@ -213,14 +228,14 @@ class DmEnvAdaptorTests(absltest.TestCase):
   def test_observation_spec(self):
     expected_spec = {
         'foo': specs.Array(shape=(), dtype=np.uint8, name='foo'),
-        'bar': specs.Array(shape=(), dtype=np.str_, name='bar')
+        'bar': specs.StringArray(shape=(), name='bar')
     }
     self.assertEqual(expected_spec, self._env.observation_spec())
 
   def test_action_spec(self):
     expected_spec = {
         'foo': specs.Array(shape=(), dtype=np.uint8, name='foo'),
-        'bar': specs.Array(shape=(), dtype=np.str_, name='bar')
+        'bar': specs.StringArray(shape=(), name='bar')
     }
     self.assertEqual(expected_spec, self._env.action_spec())
 
@@ -310,8 +325,7 @@ class ReservedKeywordTests(absltest.TestCase):
         specs.Array(shape=(), dtype=np.uint8), self._env.reward_spec())
 
   def test_discount_spec(self):
-    self.assertEqual(
-        specs.Array(shape=(), dtype=np.str_), self._env.discount_spec())
+    self.assertEqual(specs.StringArray(shape=()), self._env.discount_spec())
 
   def test_reward_from_reserved_keyword(self):
     self._connection.send = mock.MagicMock(return_value=_RESERVED_STEP_RESPONSE)
@@ -341,8 +355,7 @@ class EnvironmentAutomaticallyRequestsReservedKeywords(absltest.TestCase):
         specs.Array(shape=(), dtype=np.uint8), self._env.reward_spec())
 
   def test_discount_spec_unrequested(self):
-    self.assertEqual(
-        specs.Array(shape=(), dtype=np.str_), self._env.discount_spec())
+    self.assertEqual(specs.StringArray(shape=()), self._env.discount_spec())
 
   def test_does_not_give_back_unrequested_observations(self):
     timestep = self._env.step({})
