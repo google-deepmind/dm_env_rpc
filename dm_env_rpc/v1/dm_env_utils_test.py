@@ -179,6 +179,32 @@ class DmEnvSpecTests(absltest.TestCase):
     self.assertDictEqual({},
                          dm_env_utils.dm_env_spec(spec_manager.SpecManager({})))
 
+  def test_spec_generate_and_validate_scalars(self):
+    dm_env_rpc_specs = []
+    for name, dtype in dm_env_rpc_pb2.DataType.items():
+      if dtype != dm_env_rpc_pb2.DataType.INVALID_DATA_TYPE:
+        dm_env_rpc_specs.append(
+            dm_env_rpc_pb2.TensorSpec(name=name, shape=(), dtype=dtype))
+
+    for dm_env_rpc_spec in dm_env_rpc_specs:
+      spec = dm_env_utils.tensor_spec_to_dm_env_spec(dm_env_rpc_spec)
+      value = spec.generate_value()
+      spec.validate(value)
+
+  def test_spec_generate_and_validate_tensors(self):
+    example_shape = (10, 10, 3)
+
+    dm_env_rpc_specs = []
+    for name, dtype in dm_env_rpc_pb2.DataType.items():
+      if dtype != dm_env_rpc_pb2.DataType.INVALID_DATA_TYPE:
+        dm_env_rpc_specs.append(
+            dm_env_rpc_pb2.TensorSpec(
+                name=name, shape=example_shape, dtype=dtype))
+
+    for dm_env_rpc_spec in dm_env_rpc_specs:
+      spec = dm_env_utils.tensor_spec_to_dm_env_spec(dm_env_rpc_spec)
+      value = spec.generate_value()
+      spec.validate(value)
 
 if __name__ == '__main__':
   absltest.main()
