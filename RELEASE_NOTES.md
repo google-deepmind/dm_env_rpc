@@ -1,5 +1,13 @@
 # Release Notes
 
+## [1.0.5]
+
+*   Better support for string specs in `dm_env_adaptor`.
+*   Improved Python type annotations.
+*   Check that the server has returned the correct response in
+    `dm_env_rpc.Connection` class.
+*   Added `create_world` helper function to `dm_env_adaptor`.
+
 ## [1.0.4]
 
 *   Better support for variable sized tensors.
