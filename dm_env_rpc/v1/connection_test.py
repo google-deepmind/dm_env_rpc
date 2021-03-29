@@ -14,7 +14,6 @@
 # ============================================================================
 """Tests for Connection."""
 
-from concurrent import futures
 import contextlib
 
 from absl.testing import absltest
@@ -109,15 +108,35 @@ class ConnectionTests(absltest.TestCase):
         expected_response.Pack(_EXTENSION_RESPONSE)
         self.assertEqual(expected_response, response)
 
-  def test_create_secure_channel_and_connect(self):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    port = server.add_secure_port('[::]:0', grpc.local_server_credentials())
-    server.start()
+  @mock.patch.object(grpc, 'secure_channel')
+  @mock.patch.object(grpc, 'channel_ready_future')
+  def test_create_secure_channel_and_connect(self, mock_channel_ready,
+                                             mock_secure_channel):
+    mock_channel = mock.MagicMock()
+    mock_secure_channel.return_value = mock_channel
 
     self.assertIsNotNone(
         dm_env_rpc_connection.create_secure_channel_and_connect(
-            f'[::]:{port}', grpc.local_channel_credentials()))
-    server.stop(grace=None)
+            'valid_address', grpc.local_channel_credentials()))
+
+    mock_channel_ready.assert_called_once_with(mock_channel)
+    mock_secure_channel.assert_called_once()
+    mock_channel.close.assert_called_once()
+
+  @mock.patch.object(grpc, 'secure_channel')
+  @mock.patch.object(grpc, 'channel_ready_future')
+  def test_create_secure_channel_and_connect_context(self, mock_channel_ready,
+                                                     mock_secure_channel):
+    mock_channel = mock.MagicMock()
+    mock_secure_channel.return_value = mock_channel
+
+    with dm_env_rpc_connection.create_secure_channel_and_connect(
+        'valid_address') as connection:
+      self.assertIsNotNone(connection)
+
+    mock_channel_ready.assert_called_once_with(mock_channel)
+    mock_secure_channel.assert_called_once()
+    mock_channel.close.assert_called_once()
 
   def test_create_secure_channel_and_connect_timeout(self):
     with self.assertRaises(grpc.FutureTimeoutError):

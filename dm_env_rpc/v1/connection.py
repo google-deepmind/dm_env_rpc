@@ -167,6 +167,9 @@ def create_secure_channel_and_connect(
       super().__init__(channel)
       self._channel = channel
 
+    def __del__(self):
+      self.close()
+
     def close(self):
       super().close()
       self._channel.close()
