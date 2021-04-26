@@ -123,7 +123,7 @@ setup(
         'nose',
         'mock',
     ],
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     setup_requires=['grpcio-tools'],
     extras_require={
         'examples': ['pygame'],
