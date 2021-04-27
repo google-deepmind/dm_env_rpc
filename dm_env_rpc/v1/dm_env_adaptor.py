@@ -78,10 +78,14 @@ class DmEnvAdaptor(dm_env.Environment):
 
     if requested_observations is None:
       requested_observations = self._observation_specs.names()
-    requested_observations = set(requested_observations)
+      self._is_reward_requested = False
+      self._is_discount_requested = False
+    else:
+      self._is_reward_requested = DEFAULT_REWARD_KEY in requested_observations
+      self._is_discount_requested = (
+          DEFAULT_DISCOUNT_KEY in requested_observations)
 
-    self._is_reward_requested = DEFAULT_REWARD_KEY in requested_observations
-    self._is_discount_requested = DEFAULT_DISCOUNT_KEY in requested_observations
+    requested_observations = set(requested_observations)
 
     self._default_reward_spec = None
     self._default_discount_spec = None

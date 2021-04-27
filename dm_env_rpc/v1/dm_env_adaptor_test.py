@@ -340,6 +340,23 @@ class ReservedKeywordTests(absltest.TestCase):
 
     self.assertEqual('goodbye', timestep.discount)
 
+  def test_observations_empty(self):
+    self.assertEmpty(self._env.observation_spec())
+
+  def test_explicitly_requesting_reward_and_discount(self):
+    env = dm_env_adaptor.DmEnvAdaptor(
+        self._connection,
+        _RESERVED_SPEC,
+        requested_observations=[
+            dm_env_adaptor.DEFAULT_REWARD_KEY,
+            dm_env_adaptor.DEFAULT_DISCOUNT_KEY
+        ])
+    expected_observation_spec = {
+        dm_env_adaptor.DEFAULT_REWARD_KEY: env.reward_spec(),
+        dm_env_adaptor.DEFAULT_DISCOUNT_KEY: env.discount_spec(),
+    }
+    self.assertEqual(env.observation_spec(), expected_observation_spec)
+
 
 class EnvironmentAutomaticallyRequestsReservedKeywords(absltest.TestCase):
 
