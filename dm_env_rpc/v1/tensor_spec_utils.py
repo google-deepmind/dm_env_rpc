@@ -69,7 +69,8 @@ def _get_value(min_max_value, shape, default):
   elif which in _SCALAR_VALUE_TYPES:
     min_max = np.broadcast_to(value, shape) if shape else value
   else:
-    min_max = tensor_utils.unpack_proto(min_max_value, shape)
+    unpacked = tensor_utils.unpack_proto(min_max_value)
+    min_max = tensor_utils.reshape_array(unpacked, shape)
 
   if (shape is not None
       and np.any(np.array(shape) < 0)
