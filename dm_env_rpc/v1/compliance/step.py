@@ -57,7 +57,7 @@ def _assert_greater_equal(x, y, err_msg='', verbose=True):
 def _create_test_value(spec):
   """Creates a scalar test value consistent with the TensorSpec `spec`."""
   if _is_numeric_type(spec.dtype):
-    return tensor_spec_utils.bounds(spec).min,
+    return tensor_spec_utils.bounds(spec).min
   else:
     np_type = tensor_utils.data_type_to_np_type(spec.dtype)
     return np_type()
