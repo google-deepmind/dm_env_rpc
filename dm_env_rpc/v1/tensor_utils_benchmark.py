@@ -89,7 +89,7 @@ class _UnpackBenchmark(_AbstractBenchmark):
     self._packed = tensor_utils.pack_tensor(tensor, self._dtype)
 
   def statement(self):
-    tensor_utils.unpack_proto(self._packed, self._shape)
+    tensor_utils.unpack_tensor(self._packed)
 
 
 def main(argv):
