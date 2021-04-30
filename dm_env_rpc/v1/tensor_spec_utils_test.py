@@ -62,7 +62,7 @@ class BoundsTests(parameterized.TestCase):
     tensor_spec.shape[:] = minimum.shape
     bounds = tensor_spec_utils.bounds(tensor_spec)
     np.testing.assert_array_equal(minimum, bounds.min)
-    np.testing.assert_array_equal(np.full(minimum.shape, 2**32 - 1), bounds.max)
+    self.assertEqual(2**32 - 1, bounds.max)
 
   def test_max_n_shape(self):
     maximum = np.array([[1, 2], [3, 4]])
@@ -72,7 +72,7 @@ class BoundsTests(parameterized.TestCase):
     tensor_spec.max.uint32s.array[:] = maximum.flatten().data.tolist()
     tensor_spec.shape[:] = maximum.shape
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    np.testing.assert_array_equal(np.full(maximum.shape, 0), bounds.min)
+    self.assertEqual(0, bounds.min)
     np.testing.assert_array_equal(maximum, bounds.max)
 
   def test_invalid_min_shape(self):
@@ -134,34 +134,33 @@ class BoundsTests(parameterized.TestCase):
         'can only have scalar ranges.'):
       tensor_spec_utils.bounds(tensor_spec)
 
-  def test_min_broadcast(self):
+  def test_min_scalar_doesnt_broadcast(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.min.uint32s.array[:] = [1]
     tensor_spec.shape[:] = (2, 2)
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    np.testing.assert_array_equal(np.full(tensor_spec.shape, 1), bounds.min)
-    np.testing.assert_array_equal(
-        np.full(tensor_spec.shape, 2**32 - 1), bounds.max)
+    self.assertEqual(1, bounds.min)
+    self.assertEqual(2**32 - 1, bounds.max)
 
-  def test_max_broadcast(self):
+  def test_max_scalar_doesnt_broadcast(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.max.uint32s.array[:] = [1]
     tensor_spec.shape[:] = (2, 2)
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    np.testing.assert_array_equal(np.full(tensor_spec.shape, 0), bounds.min)
-    np.testing.assert_array_equal(np.full(tensor_spec.shape, 1), bounds.max)
+    self.assertEqual(0, bounds.min)
+    self.assertEqual(1, bounds.max)
 
-  def test_min_max_broadcast(self):
+  def test_min_max_scalars_dont_broadcast(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.min.uint32s.array[:] = [1]
     tensor_spec.max.uint32s.array[:] = [2]
     tensor_spec.shape[:] = (4,)
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    np.testing.assert_array_equal(np.full(tensor_spec.shape, 1), bounds.min)
-    np.testing.assert_array_equal(np.full(tensor_spec.shape, 2), bounds.max)
+    self.assertEqual(1, bounds.min)
+    self.assertEqual(2, bounds.max)
 
   def test_min_mismatches_type_raises_error(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
