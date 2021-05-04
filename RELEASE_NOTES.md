@@ -1,5 +1,12 @@
 # Release Notes
 
+## [1.0.6]
+
+*   `tensor_spec.bounds()` no longer broadcasts scalar bounds.
+*   Fixed bug where `reward` and `discount` were inadvertently included in the
+    observations when using `dm_env_adaptor`, without explicitly requesting
+    these as observations.
+
 ## [1.0.5]
 
 *   Better support for string specs in `dm_env_adaptor`.
