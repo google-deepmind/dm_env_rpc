@@ -209,51 +209,6 @@ class BoundsTests(parameterized.TestCase):
     with self.assertRaisesRegex(ValueError, 'foo.*min 1.*max -1'):
       tensor_spec_utils.bounds(tensor_spec)
 
-  def test_min_legacy(self):
-    tensor_spec = dm_env_rpc_pb2.TensorSpec()
-    tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
-    tensor_spec.min.uint32 = 1
-    bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((1, 2**32 - 1), bounds)
-
-  def test_max_legacy(self):
-    tensor_spec = dm_env_rpc_pb2.TensorSpec()
-    tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
-    tensor_spec.max.uint32 = 1
-    bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((0, 1), bounds)
-
-  def test_min_and_max_legacy(self):
-    tensor_spec = dm_env_rpc_pb2.TensorSpec()
-    tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT32
-    tensor_spec.min.int32 = -1
-    tensor_spec.max.int32 = 1
-    bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((-1, 1), bounds)
-
-  @parameterized.parameters([
-      dict(minimum=-500, maximum=0),
-      dict(minimum=0, maximum=500),
-  ])
-  def test_error_if_min_or_max_cannot_be_safely_cast_to_dtype(
-      self, minimum, maximum):
-    name = 'foo'
-    dtype = dm_env_rpc_pb2.DataType.INT8
-    tensor_spec = dm_env_rpc_pb2.TensorSpec()
-    tensor_spec.dtype = dtype
-    tensor_spec.min.int8 = minimum
-    tensor_spec.max.int8 = maximum
-    tensor_spec.name = name
-    with self.assertRaisesWithLiteralMatch(
-        ValueError,
-        tensor_spec_utils._BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE.format(
-            name=name,
-            minimum=minimum,
-            maximum=maximum,
-            dtype=dm_env_rpc_pb2.DataType.Name(dtype).lower(),
-        )):
-      tensor_spec_utils.bounds(tensor_spec)
-
   @parameterized.parameters([
       dict(minimum=0., maximum=np.inf),
       dict(minimum=-np.inf, maximum=0.),
@@ -262,8 +217,8 @@ class BoundsTests(parameterized.TestCase):
   def test_infinite_bounds_are_valid_for_floats(self, minimum, maximum):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.DOUBLE
-    tensor_spec.min.double = minimum
-    tensor_spec.max.double = maximum
+    tensor_spec.min.doubles.array[:] = [minimum]
+    tensor_spec.max.doubles.array[:] = [maximum]
     tensor_spec.name = 'foo'
     tensor_spec_utils.bounds(tensor_spec)
 

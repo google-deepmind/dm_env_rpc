@@ -27,9 +27,6 @@ _BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE = (
 
 Bounds = collections.namedtuple('Bounds', ['min', 'max'])
 
-_SCALAR_VALUE_TYPES = frozenset(
-    ('float', 'double', 'int8', 'int32', 'int64', 'uint8', 'uint32', 'uint64'))
-
 
 def _can_cast(array_or_scalar, np_dtype: np.dtype) -> bool:
   for value in np.asarray(array_or_scalar).flat:
@@ -66,8 +63,6 @@ def _get_value(min_max_value, shape, default):
 
   if value is None:
     min_max = default
-  elif which in _SCALAR_VALUE_TYPES:
-    min_max = value
   else:
     unpacked = tensor_utils.unpack_proto(min_max_value)
     min_max = tensor_utils.reshape_array(
