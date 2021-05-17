@@ -33,15 +33,33 @@ Example Usage:
 
   spec = property_specs['my_property']
 """
+import contextlib
 from typing import Mapping, Sequence, Optional
 
 from dm_env import specs as dm_env_specs
 from google.protobuf import any_pb2
+from google.rpc import code_pb2
 from dm_env_rpc.v1 import connection as dm_env_rpc_connection
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_utils
+from dm_env_rpc.v1 import error
 from dm_env_rpc.v1 import tensor_utils
 from dm_env_rpc.v1.extensions import properties_pb2
+
+
+@contextlib.contextmanager
+def _convert_dm_enc_rpc_error():
+  """Helper to convert DmEnvRpcError to a properties related exception."""
+  try:
+    yield
+  except error.DmEnvRpcError as e:
+    if e.code == code_pb2.NOT_FOUND:
+      raise KeyError('Property key not found!') from e
+    elif e.code == code_pb2.PERMISSION_DENIED:
+      raise PermissionError('Property permission denied!') from e
+    elif e.code == code_pb2.INVALID_ARGUMENT:
+      raise ValueError('Property value error!') from e
+    raise
 
 
 class PropertySpec(object):
@@ -143,7 +161,9 @@ class PropertiesExtension(object):
     packed_request.Pack(
         properties_pb2.PropertyRequest(
             read_property=properties_pb2.ReadPropertyRequest(key=key)))
-    self._connection.send(packed_request).Unpack(response)
+    with _convert_dm_enc_rpc_error():
+      self._connection.send(packed_request).Unpack(response)
+
     return tensor_utils.unpack_tensor(response.read_property.value)
 
   def write(self, key: str, value) -> None:
@@ -159,7 +179,8 @@ class PropertiesExtension(object):
         properties_pb2.PropertyRequest(
             write_property=properties_pb2.WritePropertyRequest(
                 key=key, value=tensor_utils.pack_tensor(value))))
-    self._connection.send(packed_request)
+    with _convert_dm_enc_rpc_error():
+      self._connection.send(packed_request)
 
   def list(self, key: str = '') -> Sequence[PropertySpec]:
     """Lists properties residing under the provided key.
@@ -176,7 +197,8 @@ class PropertiesExtension(object):
     packed_request.Pack(
         properties_pb2.PropertyRequest(
             list_property=properties_pb2.ListPropertyRequest(key=key)))
-    self._connection.send(packed_request).Unpack(response)
+    with _convert_dm_enc_rpc_error():
+      self._connection.send(packed_request).Unpack(response)
 
     return tuple(
         PropertySpec(sub_property)

@@ -22,6 +22,7 @@ import mock
 import numpy as np
 
 from google.protobuf import any_pb2
+from google.rpc import code_pb2
 from google.rpc import status_pb2
 from google.protobuf import text_format
 from dm_env_rpc.v1 import connection as dm_env_rpc_connection
@@ -75,7 +76,21 @@ _EXPECTED_REQUEST_RESPONSE_PAIRS = {
                }"""),
     _create_property_request_key('read_property { key: "bad_property" }'):
         dm_env_rpc_pb2.EnvironmentResponse(
-            error=status_pb2.Status(message='invalid property request.'))
+            error=status_pb2.Status(message='invalid property request.')),
+    _create_property_request_key('read_property { key: "invalid_key" }'):
+        dm_env_rpc_pb2.EnvironmentResponse(
+            error=status_pb2.Status(
+                code=code_pb2.NOT_FOUND, message='Invalid key.')),
+    _create_property_request_key("""write_property {
+                                 key: "argument_test"
+                                 value: { strings: { array: "invalid" } } }"""):
+        dm_env_rpc_pb2.EnvironmentResponse(
+            error=status_pb2.Status(
+                code=code_pb2.INVALID_ARGUMENT, message='Invalid argument.')),
+    _create_property_request_key('read_property { key: "permission_key" }'):
+        dm_env_rpc_pb2.EnvironmentResponse(
+            error=status_pb2.Status(
+                code=code_pb2.PERMISSION_DENIED, message='No permission.'))
 }
 
 
@@ -144,6 +159,24 @@ class PropertiesTest(absltest.TestCase):
       with self.assertRaisesRegex(error.DmEnvRpcError,
                                   'invalid property request.'):
         _ = extension['bad_property']
+
+  def test_invalid_key_raises_key_error(self):
+    with _create_mock_connection() as connection:
+      extension = properties.PropertiesExtension(connection)
+      with self.assertRaises(KeyError):
+        _ = extension['invalid_key']
+
+  def test_invalid_argument_raises_value_error(self):
+    with _create_mock_connection() as connection:
+      extension = properties.PropertiesExtension(connection)
+      with self.assertRaises(ValueError):
+        extension['argument_test'] = 'invalid'
+
+  def test_permission_denied_raises_permission_error(self):
+    with _create_mock_connection() as connection:
+      extension = properties.PropertiesExtension(connection)
+      with self.assertRaises(PermissionError):
+        _ = extension['permission_key']
 
   def test_property_description(self):
     with _create_mock_connection() as connection:
