@@ -43,6 +43,13 @@ class ErrorTest(absltest.TestCase):
     self.assertEqual(code_pb2.INVALID_ARGUMENT, unpickled.code)
     self.assertEqual('foo.', unpickled.message)
 
+  def testRepr(self):
+    exception = error.DmEnvRpcError(status_pb2.Status(
+        code=code_pb2.INVALID_ARGUMENT, message='foo.'))
+    as_string = repr(exception)
+    self.assertIn(exception.message, as_string)
+    self.assertIn(str(exception.code), as_string)
+
 
 if __name__ == '__main__':
   absltest.main()

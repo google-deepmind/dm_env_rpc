@@ -39,5 +39,8 @@ class DmEnvRpcError(Exception):
   def __str__(self):
     return str(self._status_proto)
 
+  def __repr__(self):
+    return f'DmEnvRpcError(code={self.code}, message={self.message})'
+
   def __reduce__(self):
     return (DmEnvRpcError, (self._status_proto,))
