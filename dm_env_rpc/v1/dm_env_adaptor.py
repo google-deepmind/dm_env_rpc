@@ -14,8 +14,7 @@
 # ============================================================================
 """An implementation of a dm_env environment using dm_env_rpc."""
 
-import collections
-from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple
+from typing import Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 import dm_env
 import immutabledict
 
@@ -324,13 +323,19 @@ def join_world(
     raise
 
 
+class DmEnvAndWorldName(NamedTuple):
+  """Environment and world_name created when calling create_and_join_world."""
+  env: DmEnvAdaptor
+  world_name: str
+
+
 def create_and_join_world(
     connection: dm_env_rpc_connection.Connection,
     create_world_settings: Mapping[str, Any],
     join_world_settings: Mapping[str, Any],
     requested_observations: Optional[Iterable[str]] = None,
     extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict()
-) -> Tuple[DmEnvAdaptor, str]:
+) -> DmEnvAndWorldName:
   """Helper function to create and join a world with the provided settings.
 
   Args:
@@ -349,9 +354,7 @@ def create_and_join_world(
   """
   world_name = create_world(connection, create_world_settings)
   try:
-    return_type = collections.namedtuple('DmEnvAndWorldName',
-                                         ['env', 'world_name'])
-    return return_type(
+    return DmEnvAndWorldName(
         join_world(connection, world_name, join_world_settings,
                    requested_observations, extensions), world_name)
   except (error.DmEnvRpcError, ValueError):

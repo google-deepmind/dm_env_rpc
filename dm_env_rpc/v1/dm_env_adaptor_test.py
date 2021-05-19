@@ -579,7 +579,7 @@ class CreateJoinHelpers(absltest.TestCase):
         dm_env_rpc_pb2.CreateWorldResponse(world_name='Magrathea_02'),
         dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_SPEC)
     ])
-    env, world_name = dm_env_adaptor.create_and_join_world(
+    env_and_world_name = dm_env_adaptor.create_and_join_world(
         connection,
         create_world_settings={'planet': tensor_utils.pack_tensor('Magrathea')},
         join_world_settings={
@@ -587,8 +587,8 @@ class CreateJoinHelpers(absltest.TestCase):
             'player': tensor_utils.pack_tensor('arthur'),
             'unpacked_setting': [1, 2, 3],
         })
-    self.assertIsNotNone(env)
-    self.assertEqual('Magrathea_02', world_name)
+    self.assertIsNotNone(env_and_world_name.env)
+    self.assertEqual('Magrathea_02', env_and_world_name.world_name)
 
     connection.send.assert_has_calls([
         mock.call(
