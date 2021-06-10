@@ -56,15 +56,15 @@ from dm_env_rpc.v1 import error
 class _StreamReaderWriter(object):
   """Helper class for reading/writing gRPC streams."""
 
-  def __init__(self, stub):
+  def __init__(self, stub: dm_env_rpc_pb2_grpc.EnvironmentStub):
     self._requests = queue.Queue()
     self._stream = stub.Process(iter(self._requests.get, None))
 
-  def write(self, request):
+  def write(self, request: dm_env_rpc_pb2.EnvironmentRequest):
     """Asynchronously sends `request` to the stream."""
     self._requests.put(request)
 
-  def read(self):
+  def read(self) -> dm_env_rpc_pb2.EnvironmentResponse:
     """Returns the response from stream.  Blocking."""
     return next(self._stream)
 
@@ -72,7 +72,7 @@ class _StreamReaderWriter(object):
 class Connection(object):
   """A helper class for interacting with dm_env_rpc servers."""
 
-  def __init__(self, channel):
+  def __init__(self, channel: grpc.Channel):
     """Manages a connection to a dm_env_rpc server.
 
     Args:
