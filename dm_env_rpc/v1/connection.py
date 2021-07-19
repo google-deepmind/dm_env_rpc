@@ -50,7 +50,7 @@ import grpc
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
-from dm_env_rpc.v1 import error
+from dm_env_rpc.v1 import message_utils
 
 
 class _StreamReaderWriter(object):
@@ -80,10 +80,6 @@ class Connection(object):
     """
     self._stream = _StreamReaderWriter(
         dm_env_rpc_pb2_grpc.EnvironmentStub(channel))
-    self._type_to_field = {
-        field.message_type.name: field.name
-        for field in dm_env_rpc_pb2.EnvironmentRequest.DESCRIPTOR.fields
-    }
 
   def send(self, request):
     """Sends the given request to the dm_env_rpc server and returns the response.
@@ -110,19 +106,11 @@ class Connection(object):
       ValueError: The dm_env_rpc server responded to the request with an
         unexpected response message.
     """
-    field_name = self._type_to_field[type(request).__name__]
-    environment_request = dm_env_rpc_pb2.EnvironmentRequest()
-    getattr(environment_request, field_name).CopyFrom(request)
+    environment_request, field_name = (
+        message_utils.pack_environment_request(request))
     self._stream.write(environment_request)
-    response = self._stream.read()
-    response_field = response.WhichOneof('payload')
-    if response_field == 'error':
-      raise error.DmEnvRpcError(response.error)
-    elif response_field == field_name:
-      return getattr(response, field_name)
-    else:
-      raise ValueError(f'Unexpected response message! expected: {field_name}, '
-                       f'actual: {response_field}')
+    return message_utils.unpack_environment_response(self._stream.read(),
+                                                     field_name)
 
   def close(self):
     """Closes the connection.  Call when the connection is no longer needed."""
