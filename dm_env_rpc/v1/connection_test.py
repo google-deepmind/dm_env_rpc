@@ -68,7 +68,8 @@ _REQUEST_RESPONSE_PAIRS = {
 }
 
 
-def _process(request_iterator):
+def _process(request_iterator, metadata):
+  del metadata
   for request in request_iterator:
     yield _REQUEST_RESPONSE_PAIRS.get(request.SerializeToString(), _TEST_ERROR)
 
@@ -148,6 +149,17 @@ class ConnectionTests(absltest.TestCase):
       with dm_env_rpc_connection.Connection(mock_channel) as connection:
         with self.assertRaisesRegex(ValueError, 'Unexpected response message'):
           connection.send(_INCORRECT_RESPONSE_TEST_MSG)
+
+  def test_with_metadata(self):
+    expected_metadata = (('key', 'value'),)
+    with mock.patch.object(dm_env_rpc_connection,
+                           'dm_env_rpc_pb2_grpc') as mock_grpc:
+      mock_stub_class = mock.MagicMock()
+      mock_grpc.EnvironmentStub.return_value = mock_stub_class
+      _ = dm_env_rpc_connection.Connection(
+          mock.MagicMock(), metadata=expected_metadata)
+      mock_stub_class.Process.assert_called_with(
+          mock.ANY, metadata=expected_metadata)
 
 
 if __name__ == '__main__':

@@ -100,7 +100,8 @@ def _create_mock_connection():
   with mock.patch.object(dm_env_rpc_connection,
                          'dm_env_rpc_pb2_grpc') as mock_grpc:
 
-    def _process(request_iterator):
+    def _process(request_iterator, metadata):
+      del metadata
       for request in request_iterator:
         yield _EXPECTED_REQUEST_RESPONSE_PAIRS[request.SerializeToString()]
 

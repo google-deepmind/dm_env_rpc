@@ -45,20 +45,25 @@ exceptions, so explicit error handling code isn't needed per call.
 """
 
 import queue
-from typing import Optional
+from typing import Optional, Sequence, Tuple
 import grpc
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import message_utils
 
+Metadata = Sequence[Tuple[str, str]]
+
 
 class _StreamReaderWriter(object):
   """Helper class for reading/writing gRPC streams."""
 
-  def __init__(self, stub: dm_env_rpc_pb2_grpc.EnvironmentStub):
+  def __init__(self,
+               stub: dm_env_rpc_pb2_grpc.EnvironmentStub,
+               metadata: Optional[Metadata] = None):
     self._requests = queue.Queue()
-    self._stream = stub.Process(iter(self._requests.get, None))
+    self._stream = stub.Process(
+        iter(self._requests.get, None), metadata=metadata)
 
   def write(self, request: dm_env_rpc_pb2.EnvironmentRequest):
     """Asynchronously sends `request` to the stream."""
@@ -72,14 +77,18 @@ class _StreamReaderWriter(object):
 class Connection(object):
   """A helper class for interacting with dm_env_rpc servers."""
 
-  def __init__(self, channel: grpc.Channel):
+  def __init__(self,
+               channel: grpc.Channel,
+               metadata: Optional[Metadata] = None):
     """Manages a connection to a dm_env_rpc server.
 
     Args:
       channel: A grpc channel to connect to the dm_env_rpc server over.
+      metadata: Optional sequence of 2-tuples, sent to the gRPC server as
+        metadata.
     """
     self._stream = _StreamReaderWriter(
-        dm_env_rpc_pb2_grpc.EnvironmentStub(channel))
+        dm_env_rpc_pb2_grpc.EnvironmentStub(channel), metadata)
 
   def send(self, request):
     """Sends the given request to the dm_env_rpc server and returns the response.
