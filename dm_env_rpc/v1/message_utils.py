@@ -16,10 +16,11 @@
 """Helper functions used to process dm_env_rpc request / response messages.
 """
 
-from typing import NamedTuple
+from typing import NamedTuple, Union
 
 import immutabledict
 
+from google.protobuf import any_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import error
 
@@ -29,6 +30,26 @@ _MESSAGE_TYPE_TO_FIELD = immutabledict.immutabledict({
     for field in dm_env_rpc_pb2.EnvironmentRequest.DESCRIPTOR.fields
 })
 
+DmEnvRpcRequest = Union[dm_env_rpc_pb2.CreateWorldRequest,
+                        dm_env_rpc_pb2.JoinWorldRequest,
+                        dm_env_rpc_pb2.StepRequest,
+                        dm_env_rpc_pb2.ResetRequest,
+                        dm_env_rpc_pb2.ResetWorldRequest,
+                        dm_env_rpc_pb2.LeaveWorldRequest,
+                        dm_env_rpc_pb2.DestroyWorldRequest,
+                        any_pb2.Any,  # Extension message.
+                       ]
+
+DmEnvRpcResponse = Union[dm_env_rpc_pb2.CreateWorldResponse,
+                         dm_env_rpc_pb2.JoinWorldResponse,
+                         dm_env_rpc_pb2.StepResponse,
+                         dm_env_rpc_pb2.ResetResponse,
+                         dm_env_rpc_pb2.ResetWorldResponse,
+                         dm_env_rpc_pb2.LeaveWorldResponse,
+                         dm_env_rpc_pb2.DestroyWorldResponse,
+                         any_pb2.Any,  # Extension message.
+                        ]
+
 
 class EnvironmentRequestAndFieldName(NamedTuple):
   """EnvironmentRequest and field name used when packing."""
@@ -36,7 +57,8 @@ class EnvironmentRequestAndFieldName(NamedTuple):
   field_name: str
 
 
-def pack_environment_request(request) -> EnvironmentRequestAndFieldName:
+def pack_environment_request(
+    request: DmEnvRpcRequest) -> EnvironmentRequestAndFieldName:
   """Constructs an EnvironmentRequest containing a request message.
 
   Args:
@@ -58,7 +80,7 @@ def pack_environment_request(request) -> EnvironmentRequestAndFieldName:
 
 def unpack_environment_response(
     environment_response: dm_env_rpc_pb2.EnvironmentResponse,
-    expected_field_name: str):
+    expected_field_name: str) -> DmEnvRpcResponse:
   """Extracts the response message contained within an EnvironmentResponse.
 
   Args:

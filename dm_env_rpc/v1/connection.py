@@ -90,7 +90,9 @@ class Connection(object):
     self._stream = _StreamReaderWriter(
         dm_env_rpc_pb2_grpc.EnvironmentStub(channel), metadata)
 
-  def send(self, request):
+  def send(
+      self,
+      request: message_utils.DmEnvRpcRequest) -> message_utils.DmEnvRpcResponse:
     """Sends the given request to the dm_env_rpc server and returns the response.
 
     The request should be an instance of one of the dm_env_rpc Request messages,
