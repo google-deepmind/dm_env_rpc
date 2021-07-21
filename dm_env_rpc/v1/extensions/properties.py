@@ -48,7 +48,7 @@ from dm_env_rpc.v1.extensions import properties_pb2
 
 
 @contextlib.contextmanager
-def _convert_dm_enc_rpc_error():
+def _convert_dm_env_rpc_error():
   """Helper to convert DmEnvRpcError to a properties related exception."""
   try:
     yield
@@ -161,7 +161,7 @@ class PropertiesExtension(object):
     packed_request.Pack(
         properties_pb2.PropertyRequest(
             read_property=properties_pb2.ReadPropertyRequest(key=key)))
-    with _convert_dm_enc_rpc_error():
+    with _convert_dm_env_rpc_error():
       self._connection.send(packed_request).Unpack(response)
 
     return tensor_utils.unpack_tensor(response.read_property.value)
@@ -179,7 +179,7 @@ class PropertiesExtension(object):
         properties_pb2.PropertyRequest(
             write_property=properties_pb2.WritePropertyRequest(
                 key=key, value=tensor_utils.pack_tensor(value))))
-    with _convert_dm_enc_rpc_error():
+    with _convert_dm_env_rpc_error():
       self._connection.send(packed_request)
 
   def list(self, key: str = '') -> Sequence[PropertySpec]:
@@ -197,7 +197,7 @@ class PropertiesExtension(object):
     packed_request.Pack(
         properties_pb2.PropertyRequest(
             list_property=properties_pb2.ListPropertyRequest(key=key)))
-    with _convert_dm_enc_rpc_error():
+    with _convert_dm_env_rpc_error():
       self._connection.send(packed_request).Unpack(response)
 
     return tuple(
