@@ -1,5 +1,19 @@
 # Release Notes
 
+## [1.1.0]
+
+WARNING: This release removes support for some previously deprecated fields.
+This may mean that scalar bounds for older environments are no longer readable.
+Users are advised to either revert to an older version, or re-build their
+environments to use the newer, multi-dimensional `TensorSpec.Value` fields.
+
+*   Removed scalar `TensorSpec.Value` fields, which were marked as deprecated in
+    [v1.0.1](#101). These have been superseded by array variants, which can be
+    used for scalar bounds by creating a single element array.
+*   Removed deprecated Property request/responses. These are now provided
+    through the optional Property extension.
+*   Refactored `Connection` to expose message packing utilities.
+
 ## [1.0.6]
 
 *   `tensor_spec.bounds()` no longer broadcasts scalar bounds.
