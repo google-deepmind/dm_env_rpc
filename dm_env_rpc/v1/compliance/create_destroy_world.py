@@ -69,14 +69,16 @@ class CreateDestroyWorld(absltest.TestCase, metaclass=abc.ABCMeta):
     for name, _ in settings.items():
       sans_setting = dict(settings)
       del sans_setting[name]
-      with self.assertRaises(error.DmEnvRpcError):
+      message = f'world was created without required setting "{name}"'
+      with self.assertRaises(error.DmEnvRpcError, msg=message):
         self.create_world(sans_setting)
 
   def test_cannot_create_world_with_invalid_settings(self):
     settings = self.required_world_settings
     invalid_settings = self.invalid_world_settings
     for name, tensor in invalid_settings.items():
-      with self.assertRaises(error.DmEnvRpcError):
+      message = f'world was created with invalid setting "{name}"'
+      with self.assertRaises(error.DmEnvRpcError, msg=message):
         self.create_world({name: tensor, **settings})
 
   def test_world_name_is_unique(self):
