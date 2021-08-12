@@ -123,7 +123,7 @@ setup(
         'nose',
         'mock',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     setup_requires=['grpcio-tools'],
     extras_require={
         'examples': ['pygame'],
@@ -142,7 +142,6 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: MacOS :: MacOS X',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
