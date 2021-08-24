@@ -42,13 +42,13 @@ connections indicate it is waiting for agents to join.
 ### Multiple world support
 
 Supporting multiple simultaneous worlds on a server is not required, though the
-API does support it. For an initial server implementation it is sufficient to
-only support a single world, with a `world_name` just being the empty string
-(the default) and returning errors on attempts to create or access other worlds.
+API does support it. For a simple server implementation it is sufficient to only
+support a single world, with a `world_name` just being the empty string (the
+default) and returning errors on attempts to create or access other worlds.
 
-If multiple worlds are desired from the same server instance, they should each
-be independent in the sense that an agent in one world shouldn't be able to
-affect an agent in a different world.
+For a more complex example, a server might allow the creation of multiple worlds
+to allow fixed server resources (eg. graphics resources) to be amortized across
+them.
 
 ### JoinWorldRequest/Response
 
