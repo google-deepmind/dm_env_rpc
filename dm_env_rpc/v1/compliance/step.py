@@ -196,8 +196,10 @@ class Step(absltest.TestCase, metaclass=abc.ABCMeta):
       with self.subTest(uid=uid, name=spec.name):
         unpacked = tensor_utils.unpack_tensor(observation)
         bounds = tensor_spec_utils.bounds(spec)
-        _assert_less_equal(unpacked, bounds.max)
-        _assert_greater_equal(unpacked, bounds.min)
+        if spec.max.WhichOneof('payload') is not None:
+          _assert_less_equal(unpacked, bounds.max)
+        if spec.min.WhichOneof('payload') is not None:
+          _assert_greater_equal(unpacked, bounds.min)
 
   def test_duplicated_requested_observations_are_redundant(self):
     response = self.step(requested_observations=list(self.observation_uids) * 2)
