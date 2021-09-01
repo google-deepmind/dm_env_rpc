@@ -67,7 +67,10 @@ def _create_test_tensor(spec, dtype=None):
   """Creates an arbitrary tensor consistent with the TensorSpec `spec`."""
   shape = np.asarray(spec.shape)
   shape[shape < 0] = 1
-  value = [_create_test_value(spec)] * int(np.prod(shape))
+  value = _create_test_value(spec)
+  if dtype is not None:
+    value = dtype(value)
+  value = [value] * int(np.prod(shape))
   tensor = tensor_utils.pack_tensor(value, dtype=dtype or spec.dtype)
   tensor.shape[:] = shape
   return tensor
@@ -231,7 +234,7 @@ class Step(absltest.TestCase, metaclass=abc.ABCMeta):
     for uid, spec in self.numeric_actions.items():
       with self.subTest(uid=uid, name=spec.name):
         np_type = tensor_utils.data_type_to_np_type(spec.dtype)
-        wrong_dtype = (np.int32 if np_type == np.issubdtype(np_type, np.inexact)
+        wrong_dtype = (np.float64 if not np.issubdtype(np_type, np.float64)
                        else np.float32)
         tensor = _create_test_tensor(spec, dtype=wrong_dtype)
         with self.assertRaises(error.DmEnvRpcError):
