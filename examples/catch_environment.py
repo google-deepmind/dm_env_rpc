@@ -16,6 +16,7 @@
 
 import numpy as np
 
+from google.rpc import code_pb2
 from google.rpc import status_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
@@ -298,6 +299,7 @@ class CatchEnvironmentService(dm_env_rpc_pb2_grpc.EnvironmentServicer):
           raise RuntimeError('Unhandled message: {}'.format(message_type))
         getattr(environment_response, message_type).CopyFrom(response)
       except Exception as e:  # pylint: disable=broad-except
-        environment_response.error.CopyFrom(status_pb2.Status(message=str(e)))
+        environment_response.error.CopyFrom(
+            status_pb2.Status(code=code_pb2.INTERNAL, message=str(e)))
 
       yield environment_response
