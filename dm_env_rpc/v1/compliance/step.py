@@ -54,26 +54,21 @@ def _assert_greater_equal(x, y, err_msg='', verbose=True):
       header='Arrays are not greater or equal ordered', equal_inf=False)
 
 
-def _create_test_value(spec):
-  """Creates a scalar test value consistent with the TensorSpec `spec`."""
+def _create_test_value(spec, dtype=None):
+  """Creates a NumPy array test value consistent with the TensorSpec `spec`."""
   if _is_numeric_type(spec.dtype):
-    return tensor_spec_utils.bounds(spec).min
+    value = tensor_spec_utils.bounds(spec).min
   else:
-    np_type = tensor_utils.data_type_to_np_type(spec.dtype)
-    return np_type()
+    value = tensor_utils.data_type_to_np_type(spec.dtype)()
+  shape = np.asarray(spec.shape)
+  shape[shape < 0] = 1
+  return np.full(shape=shape, fill_value=value, dtype=dtype)
 
 
 def _create_test_tensor(spec, dtype=None):
   """Creates an arbitrary tensor consistent with the TensorSpec `spec`."""
-  shape = np.asarray(spec.shape)
-  shape[shape < 0] = 1
-  value = _create_test_value(spec)
-  if dtype is not None:
-    value = dtype(value)
-  value = [value] * int(np.prod(shape))
-  tensor = tensor_utils.pack_tensor(value, dtype=dtype or spec.dtype)
-  tensor.shape[:] = shape
-  return tensor
+  value = _create_test_value(spec, dtype)
+  return tensor_utils.pack_tensor(value)
 
 
 def _np_range_info(np_type):
@@ -87,31 +82,67 @@ def _np_range_info(np_type):
 
 
 def _below_min(spec):
-  """Returns a value below spec's min or None if none."""
+  """Generates values below spec's min.
+
+  Args:
+    spec: An instance of `TensorSpec`.
+
+  Yields:
+    A sequence of tuples of `(value, index)` where `index` is an indexer into
+    `value` where the element has been set below the spec's min.
+  """
   if not spec.HasField('min'):
-    return None
+    return
 
   np_type = tensor_utils.data_type_to_np_type(spec.dtype)
   min_type_value = _np_range_info(np_type).min
+  minimum = tensor_spec_utils.bounds(spec).min
 
-  if min_type_value < tensor_spec_utils.bounds(spec).min:
-    return min_type_value
-  else:
-    return None
+  for index in np.ndindex(*spec.shape):
+    if min_type_value < minimum[index]:
+      value = _create_test_value(spec)
+      value[index] = min_type_value
+      yield value, index
 
 
 def _above_max(spec):
-  """Returns a value above spec's max or None if none."""
+  """Generates values above spec's max.
+
+  Args:
+    spec: An instance of `TensorSpec`.
+
+  Yields:
+    A sequence of tuples of `(value, index)` where `index` is an indexer into
+    `value` where the element has been set above the spec's max.
+  """
   if not spec.HasField('max'):
-    return None
+    return
 
   np_type = tensor_utils.data_type_to_np_type(spec.dtype)
   max_type_value = _np_range_info(np_type).max
+  maximum = tensor_spec_utils.bounds(spec).max
 
-  if max_type_value > tensor_spec_utils.bounds(spec).max:
-    return max_type_value
+  for index in np.ndindex(*spec.shape):
+    if max_type_value > maximum[index]:
+      value = _create_test_value(spec)
+      value[index] = max_type_value
+      yield value, index
+
+
+def _find_scalar_within_bounds(spec):
+  """Returns a scalar which can satisfy the spec's bounds for any element."""
+  if _is_numeric_type(spec.dtype):
+    bounds = tensor_spec_utils.bounds(spec)
+    hard_min = np.amax(bounds.min)
+    hard_max = np.amin(bounds.max)
+    if hard_min < hard_max:
+      return hard_min
+    else:
+      # There is no single scalar value that can satisfy all bounds.
+      return None
   else:
-    return None
+    np_type = tensor_utils.data_type_to_np_type(spec.dtype)
+    return np_type()
 
 
 def _step_before_test(function):
@@ -261,31 +292,27 @@ class Step(absltest.TestCase, metaclass=abc.ABCMeta):
   def test_cannot_send_action_below_min(self):
     for uid, spec in self.numeric_actions.items():
       with self.subTest(uid=uid, name=spec.name):
-        below = _below_min(spec)
-        if below is None:
-          # There are no values below spec's min.
-          continue
-        tensor = tensor_utils.pack_tensor(below, dtype=spec.dtype)
         shape = np.asarray(spec.shape)
         shape[shape < 0] = 1
-        tensor.shape[:] = shape
-        with self.assertRaises(error.DmEnvRpcError):
-          self.step(actions={uid: tensor})
+        for value, index in _below_min(spec):
+          with self.subTest(below_min_index=index):
+            tensor = tensor_utils.pack_tensor(value, dtype=spec.dtype)
+            tensor.shape[:] = shape
+            with self.assertRaises(error.DmEnvRpcError):
+              self.step(actions={uid: tensor})
 
   @_step_before_test
   def test_cannot_send_action_above_max(self):
     for uid, spec in self.numeric_actions.items():
       with self.subTest(uid=uid, name=spec.name):
-        above = _above_max(spec)
-        if above is None:
-          # There are no values above spec's max.
-          continue
-        tensor = tensor_utils.pack_tensor(above, dtype=spec.dtype)
         shape = np.asarray(spec.shape)
         shape[shape < 0] = 1
-        tensor.shape[:] = shape
-        with self.assertRaises(error.DmEnvRpcError):
-          self.step(actions={uid: tensor})
+        for value, index in _above_max(spec):
+          with self.subTest(above_max_index=index):
+            tensor = tensor_utils.pack_tensor(value, dtype=spec.dtype)
+            tensor.shape[:] = shape
+            with self.assertRaises(error.DmEnvRpcError):
+              self.step(actions={uid: tensor})
 
   @_step_before_test
   def test_cannot_send_action_with_wrong_shape(self):
@@ -326,8 +353,11 @@ class Step(absltest.TestCase, metaclass=abc.ABCMeta):
   def test_can_send_broadcastable_actions(self):
     for uid, spec in self.specs.actions.items():
       with self.subTest(uid=uid, name=spec.name):
-        tensor = tensor_utils.pack_tensor(
-            _create_test_value(spec), dtype=spec.dtype)
+        scalar = _find_scalar_within_bounds(spec)
+        if scalar is None:
+          # The action has no scalars we could feasibly broadcast.
+          continue
+        tensor = tensor_utils.pack_tensor(scalar, dtype=spec.dtype)
         shape = np.asarray(spec.shape)
         shape[shape < 0] = 1
         tensor.shape[:] = shape
