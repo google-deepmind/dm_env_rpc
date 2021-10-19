@@ -65,11 +65,11 @@ class SpecManager(object):
     self._specs_by_name = {spec.name: spec for spec in specs.values()}
 
   @property
-  def specs_by_uid(self) -> MutableMapping[int, dm_env_rpc_pb2.TensorSpec]:
+  def specs_by_uid(self) -> Mapping[int, dm_env_rpc_pb2.TensorSpec]:
     return self._specs_by_uid
 
   @property
-  def specs_by_name(self) -> MutableMapping[str, dm_env_rpc_pb2.TensorSpec]:
+  def specs_by_name(self) -> Mapping[str, dm_env_rpc_pb2.TensorSpec]:
     return self._specs_by_name
 
   def name_to_uid(self, name: str) -> int:
