@@ -416,7 +416,7 @@ class DataTypeToNpTypeTests(absltest.TestCase):
 
   def test_unknown_type(self):
     with self.assertRaises(TypeError):
-      tensor_utils.data_type_to_np_type(30)
+      tensor_utils.data_type_to_np_type(30)  # pytype: disable=wrong-arg-types
 
 
 class NpTypeToDataTypeTests(absltest.TestCase):

@@ -14,6 +14,8 @@
 # ============================================================================
 """Tests for dm_env_rpc/dm_env utilities."""
 
+import typing
+
 from absl.testing import absltest
 from dm_env import specs
 import numpy as np
@@ -51,7 +53,8 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     max_value = 9
     tensor_spec.min.uint32s.array[:] = [0]
     tensor_spec.max.uint32s.array[:] = [max_value]
-    actual = dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
+    actual = typing.cast(specs.DiscreteArray,
+                         dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec))
     expected = specs.DiscreteArray(
         num_values=max_value + 1, dtype=np.uint32, name='foo')
     self.assertEqual(expected, actual)
