@@ -109,6 +109,17 @@ enum DataType {
 }
 
 message TensorSpec {
+  // A human-readable name describing this tensor.
+  string name = 1;
+
+  // The dimensionality of the tensor.  See Tensor.shape for more information.
+  repeated int32 shape = 2;
+
+  // The data type of the elements in the tensor.
+  DataType dtype = 3;
+
+  // Value sub-message that defines the inclusive min/max bounds for numerical
+  // types.
   message Value {
     oneof payload {
       Tensor.FloatArray floats = 9;
@@ -125,15 +136,6 @@ message TensorSpec {
     // single element array of the relevant type.
     reserved 1 to 8;
   }
-
-  // A human-readable name describing this tensor.
-  string name = 1;
-
-  // The dimensionality of the tensor.  See Tensor.shape for more information.
-  repeated int32 shape = 2;
-
-  // The data type of the elements in the tensor.
-  DataType dtype = 3;
 
   // The minimum value that elements in the tensor can obtain.  Inclusive.
   Value min = 4;  // Optional
