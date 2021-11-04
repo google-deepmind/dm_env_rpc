@@ -181,6 +181,11 @@ class Step(absltest.TestCase, metaclass=abc.ABCMeta):
     return set(self.specs.actions.keys())
 
   @property
+  def required_actions(self):
+    """A dict of required actions for a Step call."""
+    return {}
+
+  @property
   def numeric_actions(self):
     return {uid: spec for uid, spec in self.specs.actions.items()
             if _is_numeric_type(spec.dtype)}
@@ -190,9 +195,11 @@ class Step(absltest.TestCase, metaclass=abc.ABCMeta):
     return {uid: spec for uid, spec in self.specs.actions.items()
             if not _is_numeric_type(spec.dtype)}
 
-  def step(self, **kwargs):
+  def step(self, actions=None, **kwargs):
     """Sends a StepRequest and returns the StepResponse."""
-    return self.connection.send(dm_env_rpc_pb2.StepRequest(**kwargs))
+    actions = {**self.required_actions, **(actions or {})}
+    return self.connection.send(
+        dm_env_rpc_pb2.StepRequest(actions=actions, **kwargs))
 
   # pylint: disable=missing-docstring
   ##############################################################################
