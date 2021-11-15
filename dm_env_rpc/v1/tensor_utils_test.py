@@ -83,6 +83,7 @@ class PackTensorTests(parameterized.TestCase):
       (25, np.int64, 'int64s'),
       (25, np.uint32, 'uint32s'),
       (25, np.uint64, 'uint64s'),
+      (2**64-1, np.uint64, 'uint64s'),
       (True, np.bool, 'bools'),
       (False, np.bool, 'bools'),
       ('foo', np.str, 'strings'),

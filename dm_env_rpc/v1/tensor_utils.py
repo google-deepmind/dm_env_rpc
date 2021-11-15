@@ -143,7 +143,7 @@ _NAME_TO_NP_TYPE = {
 }
 
 _TYPE_TO_PACKER = {
-    packer.np_type: packer for packer in _PACKERS
+    np.dtype(packer.np_type): packer for packer in _PACKERS
 }
 
 _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
@@ -216,7 +216,7 @@ def get_packer(np_type: np.dtype) -> Packer:
   Raises:
     TypeError: If the provided NumPy type has no known packer.
   """
-  packer = _TYPE_TO_PACKER.get(np_type)
+  packer = _TYPE_TO_PACKER.get(np.dtype(np_type))
   if not packer:
     raise TypeError(f'Unknown NumPy type "{np_type}" has no known packer.')
   return packer
