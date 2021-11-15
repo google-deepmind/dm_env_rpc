@@ -18,7 +18,7 @@ Note that the Tensor proto payload type is not supported, as it doesn't play
 well with NumPy.
 """
 import abc
-from typing import Union
+from typing import Optional, Union
 import numpy as np
 
 from google.protobuf import any_pb2
@@ -269,7 +269,10 @@ def unpack_tensor(tensor_proto: dm_env_rpc_pb2.Tensor):
   return reshape_array(array, tensor_proto.shape)
 
 
-def pack_tensor(value, dtype=None, try_compress=False) -> dm_env_rpc_pb2.Tensor:
+def pack_tensor(value,
+                dtype: Optional[Union[np.dtype,
+                                      'dm_env_rpc_pb2.DataType']] = None,
+                try_compress=False) -> dm_env_rpc_pb2.Tensor:
   """Encodes the given value as a tensor.
 
   Args:
@@ -315,7 +318,7 @@ def pack_tensor(value, dtype=None, try_compress=False) -> dm_env_rpc_pb2.Tensor:
         casting='same_kind')
 
   packed.shape[:] = value.shape
-  packer = _TYPE_TO_PACKER[value.dtype.type]
+  packer = get_packer(value.dtype.type)
   if (try_compress and np.all(value == next(value.flat))):
     # All elements are the same.  Pack in to a single value.
     packer.pack(packed, value.ravel()[0:1])
