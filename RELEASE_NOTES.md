@@ -1,5 +1,12 @@
 # Release Notes
 
+## [1.1.1]
+
+*   Removed support for Python 3.6
+*   Updated compliance tests to support wider range of environments.
+*   Fixed bug with packing large `np.uint64` scalars.
+*   Various PyType fixes.
+
 ## [1.1.0]
 
 WARNING: This release removes support for some previously deprecated fields.
