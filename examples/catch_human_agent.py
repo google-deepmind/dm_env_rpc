@@ -122,10 +122,10 @@ def main(_):
               break
 
         actions = {_ACTION_PADDLE: requested_action}
-        step_result = env.step(actions)
+        timestep = env.step(actions)
 
-        board = step_result.observation[_OBSERVATION_BOARD]
-        reward = step_result.observation[_OBSERVATION_REWARD]
+        board = timestep.observation[_OBSERVATION_BOARD]
+        reward = timestep.reward
 
         _render_window(board, window_surface, reward)
 

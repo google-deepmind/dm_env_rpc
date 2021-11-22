@@ -120,6 +120,7 @@ setup(
     ],
     tests_require=[
         'absl-py',
+        'asynctest',
         'nose',
         'mock',
     ],
