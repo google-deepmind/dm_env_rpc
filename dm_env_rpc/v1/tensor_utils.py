@@ -297,7 +297,7 @@ def pack_tensor(value,
   packed = dm_env_rpc_pb2.Tensor()
   value = np.asarray(value)
 
-  if value.dtype == np.object:
+  if value.dtype == object:
     # Because Numpy doesn't truly support variable-length string arrays, users
     # tend to use arrays of Numpy objects instead. Iff a user provides an array
     # of objects and a string dtype argument, automatically convert the value to
