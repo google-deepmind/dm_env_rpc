@@ -125,6 +125,19 @@ class PackTensorTests(parameterized.TestCase):
     packed_array = getattr(tensor, expected_payload).array
     np.testing.assert_array_equal(array, packed_array)
 
+  @parameterized.parameters(
+      ([], None, 'doubles'),
+      ([], np.int64, 'int64s'),
+      ([1, 2, 3], None, 'int64s'),
+      ([1, 2, 3], np.int32, 'int32s'),
+  )
+  def test_pack_override_dtype(self, value, dtype, expected_payload):
+    tensor = tensor_utils.pack_tensor(value, dtype=dtype)
+    array = np.asarray(value, dtype)
+    self.assertEqual(expected_payload, tensor.WhichOneof('payload'))
+    packed_array = getattr(tensor, expected_payload).array
+    np.testing.assert_array_equal(array, packed_array)
+
   def test_pack_proto_arrays(self):
     array = np.array([
         struct_pb2.Value(string_value=message)

@@ -312,10 +312,12 @@ def pack_tensor(value,
       value = np.array(value, dtype=np.str_)
 
   elif dtype is not None:
+    # NumPy defaults to np.float64 dtype when calling np.asarray() on an empty
+    # array. Allow unsafe casting in this particular case.
     value = value.astype(
         dtype=_DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype),
         copy=False,
-        casting='same_kind')
+        casting='same_kind' if value.size else 'unsafe')
 
   packed.shape[:] = value.shape
   packer = get_packer(value.dtype.type)
