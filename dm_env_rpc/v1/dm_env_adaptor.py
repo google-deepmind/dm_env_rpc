@@ -288,7 +288,8 @@ def join_world(
     world_name: str,
     join_world_settings: Mapping[str, Any],
     requested_observations: Optional[Iterable[str]] = None,
-    extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict()
+    extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict(),
+    nested_tensors: bool = True
 ) -> DmEnvAdaptor:
   """Helper function to join a world with the provided settings.
 
@@ -301,6 +302,7 @@ def join_world(
     requested_observations: Optional set of requested observations.
     extensions: Optional mapping of extension instances to DmEnvAdaptor
       attributes.
+    nested_tensors: Boolean to determine whether to flatten/unflatten tensors.
 
   Returns:
     Instance of DmEnvAdaptor.
@@ -317,7 +319,7 @@ def join_world(
 
   try:
     return DmEnvAdaptor(
-        connection, specs, requested_observations, extensions=extensions)
+        connection, specs, requested_observations, nested_tensors, extensions)
   except ValueError:
     connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
     raise
@@ -334,8 +336,8 @@ def create_and_join_world(
     create_world_settings: Mapping[str, Any],
     join_world_settings: Mapping[str, Any],
     requested_observations: Optional[Iterable[str]] = None,
-    extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict()
-) -> DmEnvAndWorldName:
+    extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict(),
+    nested_tensors: bool = True) -> DmEnvAndWorldName:
   """Helper function to create and join a world with the provided settings.
 
   Args:
@@ -348,6 +350,7 @@ def create_and_join_world(
     requested_observations: Optional set of requested observations.
     extensions: Optional mapping of extension instances to DmEnvAdaptor
       attributes.
+    nested_tensors: Boolean to determine whether to flatten/unflatten tensors.
 
   Returns:
     Tuple of DmEnvAdaptor and the created world name.
@@ -356,7 +359,8 @@ def create_and_join_world(
   try:
     return DmEnvAndWorldName(
         join_world(connection, world_name, join_world_settings,
-                   requested_observations, extensions), world_name)
+                   requested_observations, extensions, nested_tensors),
+        world_name)
   except (error.DmEnvRpcError, ValueError):
     connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
     raise

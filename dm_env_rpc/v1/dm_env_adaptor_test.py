@@ -631,6 +631,29 @@ class CreateJoinHelpers(absltest.TestCase):
         extensions={'extension': _ExampleExtension()})
     self.assertEqual('bar', env.extension.foo())
 
+  def test_create_join_world_with_unnested_tensors(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(side_effect=[
+        dm_env_rpc_pb2.CreateWorldResponse(world_name='Damogran_01'),
+        dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_NESTED_SPECS)
+    ])
+    env, _ = dm_env_adaptor.create_and_join_world(
+        connection,
+        create_world_settings={},
+        join_world_settings={},
+        nested_tensors=False)
+    expected_actions = {
+        'foo.bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
+        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+    }
+    expected_observations = {
+        'foo.bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
+        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+    }
+
+    self.assertSameElements(expected_actions, env.action_spec())
+    self.assertSameElements(expected_observations, env.observation_spec())
+
   def test_create_join_world_with_invalid_extension(self):
     connection = mock.MagicMock()
     connection.send = mock.MagicMock(side_effect=[
