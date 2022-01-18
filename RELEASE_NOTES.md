@@ -1,5 +1,12 @@
 # Release Notes
 
+## [1.1.2]
+
+*   Fixed Catch human agent example, raised in this
+    [GitHub issue](https://github.com/deepmind/dm_env_rpc/issues/2).
+*   Fixed bug when attempting to pack an empty array as a particular dtype.
+*   Minor cleanup.
+
 ## [1.1.1]
 
 *   Removed support for Python 3.6
