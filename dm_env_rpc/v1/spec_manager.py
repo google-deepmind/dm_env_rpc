@@ -66,7 +66,7 @@ class SpecManager(object):
 
   @property
   def specs_by_uid(self) -> Mapping[int, dm_env_rpc_pb2.TensorSpec]:
-    return self._specs_by_uid  # pytype: disable=bad-return-type  # bind-properties
+    return self._specs_by_uid
 
   @property
   def specs_by_name(self) -> Mapping[str, dm_env_rpc_pb2.TensorSpec]:
