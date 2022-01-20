@@ -1,5 +1,8 @@
 # `dm_env_rpc`: A networking protocol for agent-environment communication.
 
+![PyPI Python version](https://img.shields.io/pypi/pyversions/dm-env-rpc)
+![PyPI version](https://badge.fury.io/py/dm-env-rpc.svg)
+
 `dm_env_rpc` is a remote procedure call (RPC) protocol for communicating between
 machine learning agents and environments. It uses [gRPC](http://www.grpc.io) as
 the underlying communication framework, specifically its
