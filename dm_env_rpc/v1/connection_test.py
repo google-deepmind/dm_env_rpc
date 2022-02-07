@@ -68,8 +68,8 @@ _REQUEST_RESPONSE_PAIRS = {
 }
 
 
-def _process(request_iterator, metadata):
-  del metadata
+def _process(request_iterator, **kwargs):
+  del kwargs
   for request in request_iterator:
     yield _REQUEST_RESPONSE_PAIRS.get(request.SerializeToString(), _TEST_ERROR)
 
