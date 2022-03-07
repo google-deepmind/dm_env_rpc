@@ -50,7 +50,7 @@ class DmEnvAdaptor(dm_env.Environment):
 
   def __init__(
       self,
-      connection: dm_env_rpc_connection.Connection,
+      connection: dm_env_rpc_connection.ConnectionType,
       specs: dm_env_rpc_pb2.ActionObservationSpecs,
       requested_observations: Optional[Sequence[str]] = None,
       nested_tensors: bool = True,
@@ -58,8 +58,8 @@ class DmEnvAdaptor(dm_env.Environment):
     """Initializes the environment with the provided dm_env_rpc connection.
 
     Args:
-      connection: An instance of Connection already connected to a dm_env_rpc
-        server and after a successful JoinWorldRequest has been sent.
+      connection: An instance of ConnectionType already connected to a
+        dm_env_rpc server and after a successful JoinWorldRequest has been sent.
       specs: A dm_env_rpc ActionObservationSpecs message for the environment.
       requested_observations: List of observation names to be requested from the
         environment when step is called. If None is specified then all
@@ -259,7 +259,7 @@ class DmEnvAdaptor(dm_env.Environment):
     self._connection = None
 
 
-def create_world(connection: dm_env_rpc_connection.Connection,
+def create_world(connection: dm_env_rpc_connection.ConnectionType,
                  create_world_settings: Mapping[str, Any]) -> str:
   """Helper function to create a world with the provided settings.
 
@@ -284,7 +284,7 @@ def create_world(connection: dm_env_rpc_connection.Connection,
 
 
 def join_world(
-    connection: dm_env_rpc_connection.Connection,
+    connection: dm_env_rpc_connection.ConnectionType,
     world_name: str,
     join_world_settings: Mapping[str, Any],
     requested_observations: Optional[Iterable[str]] = None,
@@ -332,7 +332,7 @@ class DmEnvAndWorldName(NamedTuple):
 
 
 def create_and_join_world(
-    connection: dm_env_rpc_connection.Connection,
+    connection: dm_env_rpc_connection.ConnectionType,
     create_world_settings: Mapping[str, Any],
     join_world_settings: Mapping[str, Any],
     requested_observations: Optional[Iterable[str]] = None,

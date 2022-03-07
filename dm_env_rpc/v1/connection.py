@@ -44,6 +44,7 @@ exceptions, so explicit error handling code isn't needed per call.
 """
 
 import queue
+import sys
 from typing import Optional, Sequence, Tuple
 import grpc
 
@@ -51,10 +52,29 @@ from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import message_utils
 
+# pylint: disable=g-import-not-at-top
+if sys.version_info < (3, 8):
+  from typing_extensions import Protocol
+else:
+  from typing import Protocol
+# pylint: enable=g-import-not-at-top
+
 Metadata = Sequence[Tuple[str, str]]
 
 
-class _StreamReaderWriter(object):
+class ConnectionType(Protocol):
+  """Connection protocol definition for interacting with dm_env_rpc servers."""
+
+  def send(
+      self,
+      request: message_utils.DmEnvRpcRequest) -> message_utils.DmEnvRpcResponse:
+    """Blocking call to send and receive a message from a dm_env_rpc server."""
+
+  def close(self):
+    """Closes the connection.  Call when the connection is no longer needed."""
+
+
+class StreamReaderWriter(object):
   """Helper class for reading/writing gRPC streams."""
 
   def __init__(self,
@@ -86,7 +106,7 @@ class Connection(object):
       metadata: Optional sequence of 2-tuples, sent to the gRPC server as
         metadata.
     """
-    self._stream = _StreamReaderWriter(
+    self._stream = StreamReaderWriter(
         dm_env_rpc_pb2_grpc.EnvironmentStub(channel), metadata)
 
   def send(

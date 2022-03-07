@@ -117,6 +117,7 @@ setup(
         'grpcio',
         'numpy',
         'protobuf>=3.8',
+        'typing_extensions;python_version<"3.8"',
     ],
     tests_require=[
         'absl-py',
