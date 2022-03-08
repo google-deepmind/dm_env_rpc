@@ -40,7 +40,7 @@ class DmEnvAdaptor(dm_env.Environment):
   """An implementation of dm_env using dm_env_rpc as the data protocol.
 
   Users can also optionally provide a mapping of objects to DmEnvAdaptor
-  attributes. This is to accomodate user-created protocol extensions that
+  attributes. This is to accommodate user-created protocol extensions that
   compliment the core protocol.
 
   """
