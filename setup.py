@@ -123,7 +123,6 @@ setup(
         'absl-py',
         'asynctest',
         'nose',
-        'mock',
     ],
     python_requires='>=3.7',
     setup_requires=['grpcio-tools'],

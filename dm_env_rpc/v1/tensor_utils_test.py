@@ -15,10 +15,10 @@
 """Tests for dm_env_rpc helper functions."""
 
 import struct
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import mock
 import numpy as np
 
 from google.protobuf import any_pb2

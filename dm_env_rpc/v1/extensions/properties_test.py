@@ -15,10 +15,10 @@
 """Tests Properties extension."""
 
 import contextlib
+from unittest import mock
 
 from absl.testing import absltest
 from dm_env import specs
-import mock
 import numpy as np
 
 from google.protobuf import any_pb2

@@ -15,10 +15,10 @@
 """Tests for Connection."""
 
 import contextlib
+from unittest import mock
 
 from absl.testing import absltest
 import grpc
-import mock
 
 from google.protobuf import any_pb2
 from google.protobuf import struct_pb2

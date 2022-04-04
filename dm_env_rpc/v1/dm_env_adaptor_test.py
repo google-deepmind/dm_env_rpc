@@ -14,10 +14,11 @@
 # ============================================================================
 """Tests for dm_env_rpc/dm_env adaptor."""
 
+from unittest import mock
+
 from absl.testing import absltest
 import dm_env
 from dm_env import specs
-import mock
 import numpy as np
 
 from google.rpc import status_pb2
