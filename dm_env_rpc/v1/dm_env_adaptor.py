@@ -14,7 +14,8 @@
 # ============================================================================
 """An implementation of a dm_env environment using dm_env_rpc."""
 
-from typing import Any, Iterable, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
+
 import dm_env
 import immutabledict
 
@@ -25,6 +26,7 @@ from dm_env_rpc.v1 import dm_env_utils
 from dm_env_rpc.v1 import error
 from dm_env_rpc.v1 import spec_manager
 from dm_env_rpc.v1 import tensor_utils
+
 
 # Default observation names for common RL concepts.  By default the dm_env
 # wrapper will use these for reward and discount if available, but this behavior
@@ -287,9 +289,7 @@ def join_world(
     connection: dm_env_rpc_connection.ConnectionType,
     world_name: str,
     join_world_settings: Mapping[str, Any],
-    requested_observations: Optional[Iterable[str]] = None,
-    extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict(),
-    nested_tensors: bool = True
+    **adaptor_kwargs,
 ) -> DmEnvAdaptor:
   """Helper function to join a world with the provided settings.
 
@@ -299,10 +299,8 @@ def join_world(
     world_name: Name of the world to join.
     join_world_settings: Settings used to join the world. Values must be
       packable into a Tensor message or already packed.
-    requested_observations: Optional set of requested observations.
-    extensions: Optional mapping of extension instances to DmEnvAdaptor
-      attributes.
-    nested_tensors: Boolean to determine whether to flatten/unflatten tensors.
+    **adaptor_kwargs: Additional keyword args used to create the DmEnvAdaptor
+      instance.
 
   Returns:
     Instance of DmEnvAdaptor.
@@ -318,8 +316,7 @@ def join_world(
           world_name=world_name, settings=join_world_settings)).specs
 
   try:
-    return DmEnvAdaptor(
-        connection, specs, requested_observations, nested_tensors, extensions)
+    return DmEnvAdaptor(connection, specs, **adaptor_kwargs)
   except ValueError:
     connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
     raise
@@ -331,13 +328,10 @@ class DmEnvAndWorldName(NamedTuple):
   world_name: str
 
 
-def create_and_join_world(
-    connection: dm_env_rpc_connection.ConnectionType,
-    create_world_settings: Mapping[str, Any],
-    join_world_settings: Mapping[str, Any],
-    requested_observations: Optional[Iterable[str]] = None,
-    extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict(),
-    nested_tensors: bool = True) -> DmEnvAndWorldName:
+def create_and_join_world(connection: dm_env_rpc_connection.ConnectionType,
+                          create_world_settings: Mapping[str, Any],
+                          join_world_settings: Mapping[str, Any],
+                          **adaptor_kwargs) -> DmEnvAndWorldName:
   """Helper function to create and join a world with the provided settings.
 
   Args:
@@ -347,10 +341,8 @@ def create_and_join_world(
       packable into a Tensor proto or already packed.
     join_world_settings: Settings used to join the world. Values must be
       packable into a Tensor message.
-    requested_observations: Optional set of requested observations.
-    extensions: Optional mapping of extension instances to DmEnvAdaptor
-      attributes.
-    nested_tensors: Boolean to determine whether to flatten/unflatten tensors.
+    **adaptor_kwargs: Additional keyword args used to create the DmEnvAdaptor
+      instance.
 
   Returns:
     Tuple of DmEnvAdaptor and the created world name.
@@ -359,8 +351,7 @@ def create_and_join_world(
   try:
     return DmEnvAndWorldName(
         join_world(connection, world_name, join_world_settings,
-                   requested_observations, extensions, nested_tensors),
-        world_name)
+                   **adaptor_kwargs), world_name)
   except (error.DmEnvRpcError, ValueError):
     connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
     raise

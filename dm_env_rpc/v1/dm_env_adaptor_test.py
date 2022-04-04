@@ -555,8 +555,10 @@ class CreateJoinHelpers(absltest.TestCase):
         join_world_settings={
             'ship_type': 1,
             'player': 'zaphod',
-        })
+        },
+        requested_observations=['foo'])
     self.assertIsNotNone(env)
+    self.assertSameElements(env.observation_spec().keys(), ['foo'])
     self.assertEqual('Damogran_01', world_name)
 
     connection.send.assert_has_calls([
