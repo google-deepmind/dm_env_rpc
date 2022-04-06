@@ -186,7 +186,8 @@ class DmEnvAdaptorTests(absltest.TestCase):
   def test_illegal_state_transition(self):
     self._connection.send = mock.MagicMock(
         return_value=_TERMINATED_STEP_RESPONSE)
-    with self.assertRaisesRegex(RuntimeError, 'Environment transitioned'):
+    with self.assertRaisesRegex(
+        RuntimeError, 'Environment transitioned from TERMINATED to TERMINATED'):
       self._env.step({})
 
   def test_reset(self):

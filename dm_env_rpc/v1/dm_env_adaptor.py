@@ -148,7 +148,8 @@ class DmEnvAdaptor(dm_env.Environment):
       step_type = dm_env.StepType.LAST
     else:
       raise RuntimeError('Environment transitioned from {} to {}'.format(
-          self._last_state, step_response.state))
+          dm_env_rpc_pb2.EnvironmentStateType.Name(self._last_state),
+          dm_env_rpc_pb2.EnvironmentStateType.Name(step_response.state)))
 
     self._last_state = step_response.state
 
