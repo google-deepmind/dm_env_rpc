@@ -147,7 +147,6 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
   if not issubclass(np_type, np.number):
     raise ValueError(f'TensorSpec has non-numeric type "{np_type}".')
 
-  np_type_bounds = _np_range_info(np_type)
   has_min = minimum is not None
   has_max = maximum is not None
 
