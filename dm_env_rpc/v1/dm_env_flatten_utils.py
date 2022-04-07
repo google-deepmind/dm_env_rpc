@@ -14,7 +14,6 @@
 # ============================================================================
 """Python utilities for flattening and unflattening key-value mappings."""
 
-import collections
 from typing import Any, Dict, Mapping
 
 
@@ -36,7 +35,7 @@ def flatten_dict(input_dict: Mapping[str, Any],
     ValueError: If the `input_dict` has a key that contains the separator
       string.
   """
-  result = collections.OrderedDict()
+  result: Dict[str, Any] = {}
   for key, value in input_dict.items():
     if separator in key:
       raise ValueError(f"Key '{key}' already contains separator!")
@@ -69,7 +68,7 @@ def unflatten_dict(input_dict: Mapping[str, Any],
       instance, unflattening `{"foo": True, "foo.bar": "baz"}` will result in
       "foo" being set to both a dict and a Bool.
   """
-  result = collections.OrderedDict()
+  result: Dict[str, Any] = {}
   for key, value in input_dict.items():
     sub_keys = key.split(separator)
     sub_tree = result

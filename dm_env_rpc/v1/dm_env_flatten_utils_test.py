@@ -14,8 +14,6 @@
 # ============================================================================
 """Tests for dm_env_flatten_utils."""
 
-import collections
-
 from absl.testing import absltest
 from dm_env_rpc.v1 import dm_env_flatten_utils
 
@@ -84,7 +82,7 @@ class FlattenUtilsTest(absltest.TestCase):
       dm_env_flatten_utils.flatten_dict({'foo.bar': True}, '.')
 
   def test_invalid_flattened_dict_raises_error(self):
-    input_dict = collections.OrderedDict((
+    input_dict = dict((
         ('foo.bar', True),
         ('foo', 'invalid_value_for_sub_key'),
     ))
@@ -92,10 +90,10 @@ class FlattenUtilsTest(absltest.TestCase):
       dm_env_flatten_utils.unflatten_dict(input_dict, '.')
 
   def test_sub_tree_has_value_raises_error(self):
-    input_dict = collections.OrderedDict((
+    input_dict = dict((
         ('branch', 'should_not_have_value'),
         ('branch.leaf', True),
-        ))
+    ))
     with self.assertRaisesRegex(ValueError,
                                 "Sub-tree 'branch' has already been assigned"):
       dm_env_flatten_utils.unflatten_dict(input_dict, '.')
