@@ -76,7 +76,7 @@ def unflatten_dict(input_dict: Mapping[str, Any],
       sub_tree = sub_tree.setdefault(sub_key, {})
       if not isinstance(sub_tree, Mapping):
         raise ValueError(f"Sub-tree '{sub_key}' has already been assigned a "
-                         "leaf value {sub_tree}")
+                         f"leaf value {sub_tree}")
 
     if sub_keys[-1] in sub_tree:
       raise ValueError(f'Duplicate key {key}')
