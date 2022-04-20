@@ -153,7 +153,7 @@ all requests in the order they are received. Processing `StepRequests` may
 change the state of the environment and transition from one sequence to the
 next. In particular, note that the agent is not required to send a
 `ResetRequest` to transition from one sequence to the next: any `StepRequest`
-can also trigger this transition. This means that if an agent sends multilpe
+can also trigger this transition. This means that if an agent sends multiple
 step requests, some of those steps may be processed in a new sequence.
 
 From a protocol standpoint all actions are optional, and the `StepRequest`
