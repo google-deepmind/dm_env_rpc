@@ -1,5 +1,11 @@
 # Release Notes
 
+## [1.1.3]
+
+*   Pass all additional keyword arguments through to `DmEnvAdaptor` when using
+    create/join helper functions.
+*   Bug fixes and cleanup.
+
 ## [1.1.2]
 
 *   Fixed Catch human agent example, raised in this
