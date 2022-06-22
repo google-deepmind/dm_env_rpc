@@ -108,6 +108,37 @@ _RESERVED_STEP_RESPONSE = dm_env_rpc_pb2.StepResponse(
         1: tensor_utils.pack_tensor(5, dtype=dm_env_rpc_pb2.UINT8),
         2: tensor_utils.pack_tensor('goodbye')
     })
+_RESET_CHANGES_SPEC_ERROR = r'''Environment changed spec after reset.
+before: "actions {
+  key: 1
+  value {
+    name: "foo"
+    dtype: UINT8
+  }
+}
+actions {
+  key: 2
+  value {
+    name: "bar"
+    dtype: STRING
+  }
+}
+observations {
+  key: 1
+  value {
+    name: "foo"
+    dtype: UINT8
+  }
+}
+observations {
+  key: 2
+  value {
+    name: "bar"
+    dtype: STRING
+  }
+}
+"
+after: ""'''
 
 
 class DmEnvAdaptorTests(absltest.TestCase):
@@ -224,7 +255,8 @@ class DmEnvAdaptorTests(absltest.TestCase):
     self._connection.send.assert_called_once_with(_SAMPLE_STEP_REQUEST)
     self._connection.send = mock.MagicMock(
         side_effect=[_RESET_CHANGES_SPEC_RESPONSE, _SAMPLE_STEP_RESPONSE])
-    with self.assertRaisesRegex(RuntimeError, 'changed spec'):
+    with self.assertRaisesWithLiteralMatch(RuntimeError,
+                                           _RESET_CHANGES_SPEC_ERROR):
       self._env.reset()
 
   def test_observation_spec(self):

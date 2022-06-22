@@ -37,6 +37,11 @@ DEFAULT_DISCOUNT_KEY = 'discount'
 # Default key separator, used in flattening/unflattening nested structures.
 DEFAULT_KEY_SEPARATOR = '.'
 
+# Format string for error message used in DmEnvAdaptor.Reset
+_RESET_ENVIRONMENT_ERROR = r'''Environment changed spec after reset.
+before: "{specs}"
+after: "{new_specs}"'''
+
 
 class DmEnvAdaptor(dm_env.Environment):
   """An implementation of dm_env using dm_env_rpc as the data protocol.
@@ -122,9 +127,10 @@ class DmEnvAdaptor(dm_env.Environment):
 
   def reset(self):
     """Implements dm_env.Environment.reset."""
-    response = self._connection.send(dm_env_rpc_pb2.ResetRequest())
-    if self._dm_env_rpc_specs != response.specs:
-      raise RuntimeError('Environment changed spec after reset')
+    reset_response = self._connection.send(dm_env_rpc_pb2.ResetRequest())
+    if self._dm_env_rpc_specs != reset_response.specs:
+      raise RuntimeError(_RESET_ENVIRONMENT_ERROR.format(
+          specs=self._dm_env_rpc_specs, new_specs=reset_response.specs))
     self._last_state = dm_env_rpc_pb2.EnvironmentStateType.INTERRUPTED
     return self.step({})
 
@@ -356,3 +362,4 @@ def create_and_join_world(connection: dm_env_rpc_connection.ConnectionType,
   except (error.DmEnvRpcError, ValueError):
     connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
     raise
+
