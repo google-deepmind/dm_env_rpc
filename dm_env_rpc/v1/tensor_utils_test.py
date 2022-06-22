@@ -84,9 +84,15 @@ class PackTensorTests(parameterized.TestCase):
       (25, np.uint32, 'uint32s'),
       (25, np.uint64, 'uint64s'),
       (2**64-1, np.uint64, 'uint64s'),
-      (True, np.bool, 'bools'),
-      (False, np.bool, 'bools'),
-      ('foo', np.str, 'strings'),
+      (True, bool, 'bools'),
+      (False, bool, 'bools'),
+      ('foo', str, 'strings'),
+      # Test legacy support for numpy built-in types (no longer recommended as
+      # of release 1.20.0 -
+      # https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations)
+      (True, np.bool_, 'bools'),
+      (False, np.bool_, 'bools'),
+      ('foo', np.str_, 'strings'),
   )
   def test_pack_scalars_specific_dtype(self, scalar, dtype, expected_payload):
     tensor = tensor_utils.pack_tensor(scalar, dtype)

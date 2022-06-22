@@ -206,7 +206,7 @@ class Step(absltest.TestCase, metaclass=abc.ABCMeta):
   ##############################################################################
   def test_no_observations_returned_if_not_requested(self):
     observations = self.step().observations
-    self.assertEqual({}, observations)
+    self.assertEmpty(observations)
 
   def test_requested_observations_are_returned(self):
     response = self.step(requested_observations=self.observation_uids)

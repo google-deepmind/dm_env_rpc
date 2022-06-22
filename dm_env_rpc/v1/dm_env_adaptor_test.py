@@ -215,7 +215,7 @@ class DmEnvAdaptorTests(absltest.TestCase):
             requested_observations=[1, 2],
             actions={
                 1: tensor_utils.pack_tensor(actions['foo']),
-                2: tensor_utils.pack_tensor(actions['bar'], dtype=np.str_)
+                2: tensor_utils.pack_tensor(actions['bar'], dtype=str)
             }))
 
   def test_reset_changes_spec_raises_error(self):
@@ -403,13 +403,13 @@ class EnvironmentNestedActionsObservations(absltest.TestCase):
         'foo': {
             'bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
         },
-        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+        'baz': specs.Array(shape=(), dtype=str, name='baz'),
     }
     expected_observations = {
         'foo': {
             'bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
         },
-        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+        'baz': specs.Array(shape=(), dtype=str, name='baz'),
     }
 
     self.assertSameElements(expected_actions, env.action_spec())
@@ -422,11 +422,11 @@ class EnvironmentNestedActionsObservations(absltest.TestCase):
         nested_tensors=False)
     expected_actions = {
         'foo.bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
-        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+        'baz': specs.Array(shape=(), dtype=str, name='baz'),
     }
     expected_observations = {
         'foo.bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
-        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+        'baz': specs.Array(shape=(), dtype=str, name='baz'),
     }
 
     self.assertSameElements(expected_actions, env.action_spec())
@@ -648,11 +648,11 @@ class CreateJoinHelpers(absltest.TestCase):
         nested_tensors=False)
     expected_actions = {
         'foo.bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
-        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+        'baz': specs.Array(shape=(), dtype=str, name='baz'),
     }
     expected_observations = {
         'foo.bar': specs.Array(shape=(), dtype=np.int32, name='foo.bar'),
-        'baz': specs.Array(shape=(), dtype=np.str_, name='baz'),
+        'baz': specs.Array(shape=(), dtype=str, name='baz'),
     }
 
     self.assertSameElements(expected_actions, env.action_spec())

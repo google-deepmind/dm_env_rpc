@@ -133,9 +133,9 @@ _PACKERS = (
     _BytesPacker('uint8s', np.uint8),
     _RepeatedFieldPacker('uint32s', np.uint32),
     _RepeatedFieldPacker('uint64s', np.uint64),
-    _RepeatedFieldPacker('bools', np.bool_),
-    _RepeatedStringFieldPacker('strings', np.str_),
-    _RepeatedProtoFieldPacker('protos', np.object_),
+    _RepeatedFieldPacker('bools', bool),
+    _RepeatedStringFieldPacker('strings', str),
+    _RepeatedProtoFieldPacker('protos', object),
 )
 
 _NAME_TO_NP_TYPE = {
@@ -155,14 +155,20 @@ _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
     dm_env_rpc_pb2.DataType.UINT8: np.uint8,
     dm_env_rpc_pb2.DataType.UINT32: np.uint32,
     dm_env_rpc_pb2.DataType.UINT64: np.uint64,
-    dm_env_rpc_pb2.DataType.BOOL: np.bool_,
-    dm_env_rpc_pb2.DataType.STRING: np.str_,
-    dm_env_rpc_pb2.DataType.PROTO: np.object_,
+    dm_env_rpc_pb2.DataType.BOOL: bool,
+    dm_env_rpc_pb2.DataType.STRING: str,
+    dm_env_rpc_pb2.DataType.PROTO: object,
 }
 
 _NUMPY_DTYPE_TO_DM_ENV_RPC_DTYPE = {
-    value: key
-    for key, value in _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.items()
+    **{value: key
+       for key, value in _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.items()},
+    # Legacy support for numpy built-in types (no longer recommended as of
+    # release 1.20.0 -
+    # https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations)
+    np.bool_: dm_env_rpc_pb2.DataType.BOOL,
+    np.str_: dm_env_rpc_pb2.DataType.STRING,
+    np.object_: dm_env_rpc_pb2.DataType.PROTO,
 }
 
 
