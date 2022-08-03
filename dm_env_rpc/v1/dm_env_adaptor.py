@@ -119,11 +119,14 @@ class DmEnvAdaptor(dm_env.Environment):
     self._requested_observation_uids.sort()
 
     if extensions is not None:
+      self._extension_names = extensions.keys()
       for extension_name, extension in extensions.items():
         if hasattr(self, extension_name):
           raise ValueError(
               f'DmEnvAdaptor already has attribute "{extension_name}"!')
         setattr(self, extension_name, extension)
+    else:
+      self._extension_names = None
 
   def reset(self):
     """Implements dm_env.Environment.reset."""
@@ -263,6 +266,9 @@ class DmEnvAdaptor(dm_env.Environment):
 
   def close(self):
     """Implements dm_env.Environment.close."""
+    # Release any extensions associated with this EnvAdaptor:
+    for extension_name in (self._extension_names or []):
+      setattr(self, extension_name, None)
     # Leaves the world if we were joined.  If not, this will be a no-op anyway.
     self._connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
     self._connection = None

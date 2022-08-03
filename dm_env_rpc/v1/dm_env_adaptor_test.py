@@ -139,6 +139,7 @@ observations {
 }
 "
 after: ""'''
+_EXTENSIONS = {'baz': 123, 'qux': 'quux'}
 
 
 class DmEnvAdaptorTests(absltest.TestCase):
@@ -146,7 +147,8 @@ class DmEnvAdaptorTests(absltest.TestCase):
   def setUp(self):
     super(DmEnvAdaptorTests, self).setUp()
     self._connection = mock.MagicMock()
-    self._env = dm_env_adaptor.DmEnvAdaptor(self._connection, _SAMPLE_SPEC)
+    self._env = dm_env_adaptor.DmEnvAdaptor(
+        self._connection, _SAMPLE_SPEC, extensions=_EXTENSIONS)
 
   def test_requested_observations(self):
     requested_observations = ['foo']
@@ -301,6 +303,15 @@ class DmEnvAdaptorTests(absltest.TestCase):
     self._connection.send = mock.MagicMock(side_effect=ValueError('foo'))
     with self.assertRaisesRegex(ValueError, 'foo'):
       self._env.close()
+
+  def test_close_releases_extensions(self):
+    for extension_name, extension in _EXTENSIONS.items():
+      self.assertEqual(getattr(self._env, extension_name), extension)
+    self._connection.send = mock.MagicMock(
+        return_value=dm_env_rpc_pb2.LeaveWorldResponse())
+    self._env.close()
+    for extension_name in _EXTENSIONS:
+      self.assertIsNone(getattr(self._env, extension_name))
 
 
 class OverrideRewardDiscount(dm_env_adaptor.DmEnvAdaptor):
