@@ -17,9 +17,11 @@
 import typing
 
 from absl.testing import absltest
+from absl.testing import parameterized
 from dm_env import specs
 import numpy as np
 
+from google.protobuf import text_format
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_utils
 from dm_env_rpc.v1 import spec_manager
@@ -156,6 +158,28 @@ class TensorSpecToDmEnvSpecTests(absltest.TestCase):
     tensor_spec.max.floats.array[:] = [10.0]
     with self.assertRaisesRegex(ValueError, 'string'):
       dm_env_utils.tensor_spec_to_dm_env_spec(tensor_spec)
+
+
+class DmEnvSpecToTensorSpecTests(parameterized.TestCase):
+
+  @parameterized.parameters(
+      (specs.Array([1, 2], np.float32,
+                   'foo'), """name: "foo" shape: 1 shape: 2 dtype: FLOAT"""),
+      (specs.DiscreteArray(5, int, 'bar'), r"""name: "bar" dtype: INT64
+       min { int64s { array: 0 } } max { int64s { array: 4 } }"""),
+      (specs.BoundedArray(
+          (), np.int32, -1, 5, 'baz'), r"""name: "baz" dtype: INT32
+       min { int32s { array: -1 } } max { int32s { array: 5 } }"""),
+      (specs.BoundedArray((1, 2), np.uint8, 0, 127,
+                          'zog'), r"""name: "zog" shape: 1 shape: 2 dtype: UINT8
+        min { uint8s { array: "\000" } } max { uint8s { array: "\177" } }"""),
+      (specs.StringArray(shape=(5, 5), name='fux'),
+       r"""name: "fux" shape: 5 shape: 5 dtype: STRING"""),
+  )
+  def test_dm_env_spec(self, value, expected):
+    tensor_spec = dm_env_utils.dm_env_spec_to_tensor_spec(value)
+    expected = text_format.Parse(expected, dm_env_rpc_pb2.TensorSpec())
+    self.assertEqual(expected, tensor_spec)
 
 
 class DmEnvSpecTests(absltest.TestCase):

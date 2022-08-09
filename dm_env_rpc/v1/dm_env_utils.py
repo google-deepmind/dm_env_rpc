@@ -60,6 +60,22 @@ def tensor_spec_to_dm_env_spec(
           shape=tensor_spec.shape, dtype=np_type, name=tensor_spec.name)
 
 
+def dm_env_spec_to_tensor_spec(spec: specs.Array) -> dm_env_rpc_pb2.TensorSpec:
+  """Returns a dm_env_rpc TensorSpec from the provided dm_env spec type."""
+  dtype = np.str_ if isinstance(spec, specs.StringArray) else spec.dtype
+  tensor_spec = dm_env_rpc_pb2.TensorSpec(
+      name=spec.name,
+      shape=spec.shape,
+      dtype=tensor_utils.np_type_to_data_type(dtype))
+  if isinstance(spec, specs.DiscreteArray):
+    tensor_spec_utils.set_bounds(
+        tensor_spec, minimum=0, maximum=spec.num_values - 1)
+  elif isinstance(spec, specs.BoundedArray):
+    tensor_spec_utils.set_bounds(tensor_spec, spec.minimum, spec.maximum)
+
+  return tensor_spec
+
+
 def dm_env_spec(
     spec_manager: dm_env_rpc_spec_manager.SpecManager
 ) -> Dict[str, specs.Array]:
