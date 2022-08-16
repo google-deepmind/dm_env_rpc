@@ -38,6 +38,20 @@ especially recommended that client code have something similar to `SpecManager`
 that turns UIDs into human readable text as soon as possible. Strings are both
 less likely to be used wrong and more easily debugged.
 
+### Common state transition errors
+
+The [Environment connection state machine](overview.md#states) cannot transition
+directly between `INTERRUPTED` and `TERMINATED` states. Servers may
+inadvertently cause an `INTERRUPTED` --> `TERMINATED` transition if:
+
+1.  The server environment starts in a completed state (and therefore finishes
+    in 0 steps), or
+1.  The server environment setup fails but does not throw an exception until the
+    first step.
+
+To ensure server state transitions are legal, please check the validity of the
+server environment when it is initialized.
+
 ## Reward functions
 
 [Reward function design is difficult](https://www.alexirpan.com/2018/02/14/rl-hard.html#reward-function-design-is-difficult),

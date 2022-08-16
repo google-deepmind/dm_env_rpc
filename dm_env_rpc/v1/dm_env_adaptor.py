@@ -156,6 +156,9 @@ class DmEnvAdaptor(dm_env.Environment):
     elif self._last_state == dm_env_rpc_pb2.EnvironmentStateType.RUNNING:
       step_type = dm_env.StepType.LAST
     else:
+      # Neither response.state nor _last_state is RUNNING.
+      # See common causes for state transition errors:
+      # https://github.com/deepmind/dm_env_rpc/blob/master/docs/v1/appendix.md#common-state-transition-errors
       raise RuntimeError('Environment transitioned from {} to {}'.format(
           dm_env_rpc_pb2.EnvironmentStateType.Name(self._last_state),
           dm_env_rpc_pb2.EnvironmentStateType.Name(step_response.state)))
