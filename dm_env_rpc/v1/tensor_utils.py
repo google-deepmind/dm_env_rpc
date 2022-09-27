@@ -133,9 +133,9 @@ _PACKERS = (
     _BytesPacker('uint8s', np.uint8),
     _RepeatedFieldPacker('uint32s', np.uint32),
     _RepeatedFieldPacker('uint64s', np.uint64),
-    _RepeatedFieldPacker('bools', bool),
-    _RepeatedStringFieldPacker('strings', str),
-    _RepeatedProtoFieldPacker('protos', object),
+    _RepeatedFieldPacker('bools', np.dtype(bool)),
+    _RepeatedStringFieldPacker('strings', np.dtype(str)),
+    _RepeatedProtoFieldPacker('protos', np.dtype(object)),
 )
 
 _NAME_TO_NP_TYPE = {
@@ -155,9 +155,9 @@ _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
     dm_env_rpc_pb2.DataType.UINT8: np.uint8,
     dm_env_rpc_pb2.DataType.UINT32: np.uint32,
     dm_env_rpc_pb2.DataType.UINT64: np.uint64,
-    dm_env_rpc_pb2.DataType.BOOL: bool,
-    dm_env_rpc_pb2.DataType.STRING: str,
-    dm_env_rpc_pb2.DataType.PROTO: object,
+    dm_env_rpc_pb2.DataType.BOOL: np.dtype(bool),
+    dm_env_rpc_pb2.DataType.STRING: np.dtype(str),
+    dm_env_rpc_pb2.DataType.PROTO: np.dtype(object),
 }
 
 _NUMPY_DTYPE_TO_DM_ENV_RPC_DTYPE = {
@@ -186,7 +186,7 @@ def data_type_to_np_type(dm_env_rpc_dtype: dm_env_rpc_pb2.DataType) -> np.dtype:
   np_type = _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dm_env_rpc_dtype)
   if not np_type:
     raise TypeError(f'Unknown DataType {dm_env_rpc_dtype}')
-  return np_type
+  return np.dtype(np_type)
 
 
 def np_type_to_data_type(np_type: np.dtype) -> dm_env_rpc_pb2.DataType:

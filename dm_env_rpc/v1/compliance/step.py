@@ -58,7 +58,7 @@ def _create_test_value(spec, dtype=None):
   if _is_numeric_type(spec.dtype):
     value = tensor_spec_utils.bounds(spec).min
   else:
-    value = tensor_utils.data_type_to_np_type(spec.dtype)()
+    value = tensor_utils.data_type_to_np_type(spec.dtype).type()
   shape = np.asarray(spec.shape)
   shape[shape < 0] = 1
   return np.full(shape=shape, fill_value=value, dtype=dtype)
@@ -68,16 +68,6 @@ def _create_test_tensor(spec, dtype=None):
   """Creates an arbitrary tensor consistent with the TensorSpec `spec`."""
   value = _create_test_value(spec, dtype)
   return tensor_utils.pack_tensor(value)
-
-
-def _np_range_info(np_type):
-  """Returns type info for `np_type`, which includes min and max attributes."""
-  if issubclass(np_type, np.floating):
-    return np.finfo(np_type)
-  elif issubclass(np_type, np.integer):
-    return np.iinfo(np_type)
-  else:
-    raise ValueError('{} does not have range info.'.format(np_type))
 
 
 def _below_min(spec):
@@ -94,7 +84,7 @@ def _below_min(spec):
     return
 
   np_type = tensor_utils.data_type_to_np_type(spec.dtype)
-  min_type_value = _np_range_info(np_type).min
+  min_type_value = tensor_spec_utils.np_range_info(np_type).min
   minimum = tensor_spec_utils.bounds(spec).min
 
   for index in np.ndindex(*spec.shape):
@@ -118,7 +108,7 @@ def _above_max(spec):
     return
 
   np_type = tensor_utils.data_type_to_np_type(spec.dtype)
-  max_type_value = _np_range_info(np_type).max
+  max_type_value = tensor_spec_utils.np_range_info(np_type).max
   maximum = tensor_spec_utils.bounds(spec).max
 
   for index in np.ndindex(*spec.shape):
@@ -141,7 +131,7 @@ def _find_scalar_within_bounds(spec):
       return None
   else:
     np_type = tensor_utils.data_type_to_np_type(spec.dtype)
-    return np_type()
+    return np_type.type()
 
 
 def _step_before_test(function):

@@ -15,6 +15,7 @@
 """Helper Python utilities for managing dm_env_rpc TensorSpecs."""
 
 import collections
+from typing import Union
 import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
@@ -35,11 +36,12 @@ def _can_cast(array_or_scalar, np_dtype: np.dtype) -> bool:
   return True
 
 
-def _np_range_info(np_type: np.dtype):
+def np_range_info(np_type: ...) -> Union[np.finfo, np.iinfo]:
   """Returns type info for `np_type`, which includes min and max attributes."""
-  if issubclass(np_type, np.floating):
+  np_type = np.dtype(np_type)
+  if issubclass(np_type.type, np.floating):
     return np.finfo(np_type)
-  elif issubclass(np_type, np.integer):
+  elif issubclass(np_type.type, np.integer):
     return np.iinfo(np_type)
   else:
     raise ValueError('{} does not have range info.'.format(np_type))
@@ -93,7 +95,7 @@ def bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec) -> Bounds:
   """
   np_type = tensor_utils.data_type_to_np_type(tensor_spec.dtype)
   tensor_spec_type = dm_env_rpc_pb2.DataType.Name(tensor_spec.dtype).lower()
-  if not issubclass(np_type, np.number):
+  if not issubclass(np_type.type, np.number):
     raise ValueError('TensorSpec "{}" has non-numeric type {}.'
                      .format(tensor_spec.name, tensor_spec_type))
 
@@ -109,7 +111,7 @@ def bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec) -> Bounds:
     raise ValueError('TensorSpec "{}" has dtype {} but max type {}.'.format(
         tensor_spec.name, tensor_spec_type, max_which))
 
-  dtype_bounds = _np_range_info(np_type)
+  dtype_bounds = np_range_info(np_type)
   min_bound = _get_value(tensor_spec.min, tensor_spec.shape, dtype_bounds.min)
   max_bound = _get_value(tensor_spec.max, tensor_spec.shape, dtype_bounds.max)
 
@@ -125,7 +127,7 @@ def bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec) -> Bounds:
     raise ValueError('TensorSpec "{}" has min {} larger than max {}.'.format(
         tensor_spec.name, min_bound, max_bound))
 
-  return Bounds(np_type(min_bound), np_type(max_bound))
+  return Bounds(np_type.type(min_bound), np_type.type(max_bound))
 
 
 def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
@@ -144,7 +146,7 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
       `tensor_spec`.
   """
   np_type = tensor_utils.data_type_to_np_type(tensor_spec.dtype)
-  if not issubclass(np_type, np.number):
+  if not issubclass(np_type.type, np.number):
     raise ValueError(f'TensorSpec has non-numeric type "{np_type}".')
 
   has_min = minimum is not None

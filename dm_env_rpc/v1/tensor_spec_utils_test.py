@@ -27,16 +27,16 @@ class NpRangeInfoTests(absltest.TestCase):
 
   def test_floating(self):
     expected_min = np.finfo(np.float32).min
-    actual_min = tensor_spec_utils._np_range_info(np.float32).min
+    actual_min = tensor_spec_utils.np_range_info(np.float32).min
     self.assertEqual(expected_min, actual_min)
 
   def test_integer(self):
-    actual_min = tensor_spec_utils._np_range_info(np.uint32).min
+    actual_min = tensor_spec_utils.np_range_info(np.uint32).min
     self.assertEqual(0, actual_min)
 
   def test_string_gives_error(self):
-    with self.assertRaisesRegex(ValueError, 'numpy.str_'):
-      _ = tensor_spec_utils._np_range_info(np.str_).min
+    with self.assertRaisesRegex(ValueError, 'does not have range info'):
+      _ = tensor_spec_utils.np_range_info(np.str_).min
 
 
 class BoundsTests(parameterized.TestCase):
