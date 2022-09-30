@@ -45,13 +45,13 @@ class BoundsTests(parameterized.TestCase):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((0, 2**32 - 1), bounds)
+    self.assertEqual(tensor_spec_utils.Bounds(0, 2**32 - 1), bounds)
 
   def test_unbounded_signed(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT32
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((-2**31, 2**31 - 1), bounds)
+    self.assertEqual(tensor_spec_utils.Bounds(-2**31, 2**31 - 1), bounds)
 
   def test_min_n_shape(self):
     minimum = np.array([[1, 2], [3, 4]])
@@ -97,14 +97,14 @@ class BoundsTests(parameterized.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.min.uint32s.array[:] = [1]
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((1, 2**32 - 1), bounds)
+    self.assertEqual(tensor_spec_utils.Bounds(1, 2**32 - 1), bounds)
 
   def test_max(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.UINT32
     tensor_spec.max.uint32s.array[:] = [1]
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((0, 1), bounds)
+    self.assertEqual(tensor_spec_utils.Bounds(0, 1), bounds)
 
   def test_min_and_max(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
@@ -112,7 +112,7 @@ class BoundsTests(parameterized.TestCase):
     tensor_spec.min.int32s.array[:] = [-1]
     tensor_spec.max.int32s.array[:] = [1]
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((-1, 1), bounds)
+    self.assertEqual(tensor_spec_utils.Bounds(-1, 1), bounds)
 
   def test_broadcast_var_shape(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
@@ -121,7 +121,7 @@ class BoundsTests(parameterized.TestCase):
     tensor_spec.max.int32s.array[:] = [1]
     tensor_spec.shape[:] = (-1,)
     bounds = tensor_spec_utils.bounds(tensor_spec)
-    self.assertEqual((-1, 1), bounds)
+    self.assertEqual(tensor_spec_utils.Bounds(-1, 1), bounds)
 
   def test_invalid_min_var_shape(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
@@ -191,14 +191,17 @@ class BoundsTests(parameterized.TestCase):
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT8
     tensor_spec.max.int8s.array = b'\x00'
     tensor_spec.name = 'foo'
-    self.assertEqual((-128, 0), tensor_spec_utils.bounds(tensor_spec))
+    self.assertEqual(
+        tensor_spec_utils.Bounds(-128, 0),
+        tensor_spec_utils.bounds(tensor_spec))
 
   def test_min_0_stays_0(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()
     tensor_spec.dtype = dm_env_rpc_pb2.DataType.INT8
     tensor_spec.min.int8s.array = b'\x00'
     tensor_spec.name = 'foo'
-    self.assertEqual((0, 127), tensor_spec_utils.bounds(tensor_spec))
+    self.assertEqual(
+        tensor_spec_utils.Bounds(0, 127), tensor_spec_utils.bounds(tensor_spec))
 
   def test_max_less_than_min_raises_error(self):
     tensor_spec = dm_env_rpc_pb2.TensorSpec()

@@ -14,8 +14,8 @@
 # ============================================================================
 """Helper Python utilities for managing dm_env_rpc TensorSpecs."""
 
-import collections
-from typing import Union
+import dataclasses
+from typing import Generic, TypeVar, Union
 import numpy as np
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
@@ -26,7 +26,13 @@ _BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE = (
     'TensorSpec "{name}"\'s bounds [{minimum}, {maximum}] contain value(s) '
     'that cannot be safely cast to dtype {dtype}.')
 
-Bounds = collections.namedtuple('Bounds', ['min', 'max'])
+T = TypeVar('T')
+
+
+@dataclasses.dataclass
+class Bounds(Generic[T]):
+  min: T
+  max: T
 
 
 def _can_cast(array_or_scalar, np_dtype: np.dtype) -> bool:
