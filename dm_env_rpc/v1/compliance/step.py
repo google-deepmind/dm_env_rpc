@@ -88,7 +88,8 @@ def _below_min(spec):
   minimum = tensor_spec_utils.bounds(spec).min
 
   for index in np.ndindex(*spec.shape):
-    if min_type_value < minimum[index]:
+    min_index_value = minimum if np.isscalar(minimum) else minimum[index]
+    if min_type_value < min_index_value:
       value = _create_test_value(spec)
       value[index] = min_type_value
       yield value, index
@@ -112,7 +113,8 @@ def _above_max(spec):
   maximum = tensor_spec_utils.bounds(spec).max
 
   for index in np.ndindex(*spec.shape):
-    if max_type_value > maximum[index]:
+    max_index_value = maximum if np.isscalar(maximum) else maximum[index]
+    if max_type_value > max_index_value:
       value = _create_test_value(spec)
       value[index] = max_type_value
       yield value, index
