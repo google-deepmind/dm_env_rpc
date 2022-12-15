@@ -181,14 +181,14 @@ class PackTensorTests(parameterized.TestCase):
       (['foobar'], np.array(['foobar']).dtype),
   )
   def test_np_object_strings(self, value, dtype):
-    object_array = np.array(value, dtype=np.object)
+    object_array = np.array(value, dtype=object)
     tensor = tensor_utils.pack_tensor(object_array, dtype=dtype)
     self.assertEqual(list(object_array.shape), tensor.shape)
     self.assertTrue(tensor.HasField('strings'))
 
   def test_np_object_strings_no_dtype_raises_exception(self):
     with self.assertRaises(ValueError):
-      tensor_utils.pack_tensor(np.array(['foo'], dtype=np.object))
+      tensor_utils.pack_tensor(np.array(['foo'], dtype=object))
 
   @parameterized.parameters(
       (['foo', 42, 'bar'],),
@@ -198,7 +198,7 @@ class PackTensorTests(parameterized.TestCase):
     with self.assertRaisesRegex(TypeError,
                                 'not all elements are Python string types'):
       tensor_utils.pack_tensor(
-          np.array(bad_element, dtype=np.object), dtype=np.str_)
+          np.array(bad_element, dtype=object), dtype=np.str_)
 
   def test_class_instance_throw_exception(self):
 
@@ -431,7 +431,7 @@ class DataTypeToNpTypeTests(absltest.TestCase):
         tensor_utils.data_type_to_np_type(dm_env_rpc_pb2.DataType.FLOAT))
 
   def test_empty_object_list(self):
-    tensor = tensor_utils.pack_tensor(np.array([], dtype=np.object))
+    tensor = tensor_utils.pack_tensor(np.array([], dtype=object))
     self.assertEqual([0], tensor.shape)
 
   def test_unknown_type(self):
