@@ -313,6 +313,22 @@ class DmEnvAdaptorTests(absltest.TestCase):
     for extension_name in _EXTENSIONS:
       self.assertIsNone(getattr(self._env, extension_name))
 
+  def test_close_allows_multiple_close_calls(self):
+    self._connection.send = mock.MagicMock(
+        return_value=dm_env_rpc_pb2.LeaveWorldResponse(),
+    )
+    self._env.close()
+    self._env.close()
+
+    # Most importantly, when calling close multiple times, we need to make sure
+    # that any _connection.send request is called once as the conenction is
+    # destroyed after the first close.
+
+    self._connection.send.assert_called_once_with(
+        dm_env_rpc_pb2.LeaveWorldRequest(),
+    )
+    self.assertIsNone(self._env._connection)
+
 
 class OverrideRewardDiscount(dm_env_adaptor.DmEnvAdaptor):
 

@@ -273,8 +273,9 @@ class DmEnvAdaptor(dm_env.Environment):
     for extension_name in (self._extension_names or []):
       setattr(self, extension_name, None)
     # Leaves the world if we were joined.  If not, this will be a no-op anyway.
-    self._connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
-    self._connection = None
+    if self._connection is not None:
+      self._connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
+      self._connection = None
 
 
 def create_world(connection: dm_env_rpc_connection.ConnectionType,
