@@ -289,7 +289,7 @@ def create_world(connection: dm_env_rpc_connection.ConnectionType,
     Created world name.
   """
   create_world_settings = dm_env_flatten_utils.flatten_dict(
-      create_world_settings, DEFAULT_KEY_SEPARATOR
+      create_world_settings, DEFAULT_KEY_SEPARATOR, strict=False
   )
 
   create_world_settings = {
@@ -324,7 +324,7 @@ def join_world(
     Instance of DmEnvAdaptor.
   """
   join_world_settings = dm_env_flatten_utils.flatten_dict(
-      join_world_settings, DEFAULT_KEY_SEPARATOR
+      join_world_settings, DEFAULT_KEY_SEPARATOR, strict=False
   )
 
   join_world_settings = {

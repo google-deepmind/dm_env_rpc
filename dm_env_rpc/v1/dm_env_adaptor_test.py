@@ -17,6 +17,7 @@
 from unittest import mock
 
 from absl.testing import absltest
+from absl.testing import parameterized
 import dm_env
 from dm_env import specs
 import numpy as np
@@ -570,7 +571,7 @@ class EnvironmentNestedActionsObservations(absltest.TestCase):
           extensions={'_connection': object()})
 
 
-class CreateJoinHelpers(absltest.TestCase):
+class CreateJoinHelpers(parameterized.TestCase):
 
   def test_create_world(self):
     connection = mock.MagicMock()
@@ -636,7 +637,21 @@ class CreateJoinHelpers(absltest.TestCase):
                 }""", dm_env_rpc_pb2.JoinWorldRequest())),
     ])
 
-  def test_flatten_create_join_world_settings(self):
+  @parameterized.named_parameters(
+      (
+          'nested',
+          {'nested': {'planet': 'Damogran'}},
+          {'nested': {'ship_type': 1, 'player': 'zaphod'}},
+      ),
+      (
+          'already_flattened',
+          {'nested.planet': 'Damogran'},
+          {'nested.ship_type': 1, 'nested.player': 'zaphod'},
+      ),
+  )
+  def test_flatten_create_join_world_settings(
+      self, create_settings, join_settings
+  ):
     connection = mock.MagicMock()
     connection.send = mock.MagicMock(side_effect=[
         dm_env_rpc_pb2.CreateWorldResponse(world_name='Damogran_01'),
@@ -644,8 +659,8 @@ class CreateJoinHelpers(absltest.TestCase):
     ])
     env, world_name = dm_env_adaptor.create_and_join_world(
         connection,
-        create_world_settings={'nested': {'planet': 'Damogran'}},
-        join_world_settings={'nested': {'ship_type': 1, 'player': 'zaphod'}})
+        create_world_settings=create_settings,
+        join_world_settings=join_settings)
     self.assertIsNotNone(env)
     self.assertEqual('Damogran_01', world_name)
 
