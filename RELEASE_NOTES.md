@@ -1,5 +1,15 @@
 # Release Notes
 
+## [1.1.4]
+
+*   Support for nested create/join world settings in `dm_env_adaptor` helper
+    functions.
+*   Support scalar min/max bounds for array actions in compliance tests.
+*   Allow `DmEnvAdaptor` to be closable multiple times.
+*   Cleaned up various type hints, specifically removing deprecated NumPy type
+    aliases.
+*   Bug fixes.
+
 ## [1.1.3]
 
 *   Pass all additional keyword arguments through to `DmEnvAdaptor` when using
@@ -70,7 +80,7 @@ environments to use the newer, multi-dimensional `TensorSpec.Value` fields.
 
 *   Removed portpicker dependency, instead relying on gRPC port picking
     functionality.
-*   Changed property extension API to be more ameanable to being used as an
+*   Changed property extension API to be more amenable to being used as an
     extension object for DmEnvAdaptor.
 
 ## [1.0.2]
@@ -79,16 +89,16 @@ environments to use the newer, multi-dimensional `TensorSpec.Value` fields.
     `TensorSpec` name to indicate a level of nesting. Updated `dm_env` adaptor
     to flatten/unflattten actions and observations.
 *   Increased minimum Python version to 3.6.
-*   Moved property request/responses to its own extension. This supercedes the
+*   Moved property request/responses to its own extension. This supersedes the
     previous property requests, which have been marked as deprecated. **These
     requests will be removed in a future version of dm_env_rpc**.
-*   Speed improvements for packing and un-packing byte arrays in Python.
+*   Speed improvements for packing and unpacking byte arrays in Python.
 
 ## [1.0.1]
 
 ### Added
 
-*   Support for per-element min/max values. This supercedes the existing scalar
+*   Support for per-element min/max values. This supersedes the existing scalar
     fields, which have been marked as deprecated. **These fields will be be
     removed in a future version of dm_env_rpc.**
 *   Initial set of compliance tests that environment authors can use to better
