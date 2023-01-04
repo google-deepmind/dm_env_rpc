@@ -38,7 +38,10 @@ def flatten_dict(input_dict: Mapping[str, Any],
   result: Dict[str, Any] = {}
   for key, value in input_dict.items():
     if separator in key:
-      raise ValueError(f"Key '{key}' already contains separator!")
+      raise ValueError(
+          f"Can not safely flatten dictionary: key '{key}' already contains "
+          f"the separator '{separator}'!"
+      )
     if isinstance(value, Mapping) and len(value):
       result.update({
           f'{key}{separator}{sub_key}': sub_value
