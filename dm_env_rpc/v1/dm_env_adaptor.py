@@ -60,7 +60,7 @@ class DmEnvAdaptor(dm_env.Environment):
       specs: dm_env_rpc_pb2.ActionObservationSpecs,
       requested_observations: Optional[Sequence[str]] = None,
       nested_tensors: bool = True,
-      extensions: Optional[Mapping[str, Any]] = immutabledict.immutabledict()):
+      extensions: Mapping[str, Any] = immutabledict.immutabledict()):
     """Initializes the environment with the provided dm_env_rpc connection.
 
     Args:
@@ -71,8 +71,8 @@ class DmEnvAdaptor(dm_env.Environment):
         environment when step is called. If None is specified then all
         observations will be requested.
       nested_tensors: Boolean to determine whether to flatten/unflatten tensors.
-      extensions: Optional mapping of extension instances to DmEnvAdaptor
-        attributes. Raises ValueError if attribute already exists.
+      extensions: Mapping of extension instances to DmEnvAdaptor attributes.
+        Raises ValueError if attribute already exists.
     """
     self._dm_env_rpc_specs = specs
     self._action_specs = spec_manager.SpecManager(specs.actions)
@@ -117,15 +117,12 @@ class DmEnvAdaptor(dm_env.Environment):
     # Not strictly necessary but it makes the unit tests deterministic.
     self._requested_observation_uids.sort()
 
-    if extensions is not None:
-      self._extension_names = extensions.keys()
-      for extension_name, extension in extensions.items():
-        if hasattr(self, extension_name):
-          raise ValueError(
-              f'DmEnvAdaptor already has attribute "{extension_name}"!')
-        setattr(self, extension_name, extension)
-    else:
-      self._extension_names = None
+    self._extension_names = extensions.keys()
+    for extension_name, extension in extensions.items():
+      if hasattr(self, extension_name):
+        raise ValueError(
+            f'DmEnvAdaptor already has attribute "{extension_name}"!')
+      setattr(self, extension_name, extension)
 
   def reset(self):
     """Implements dm_env.Environment.reset."""
@@ -269,7 +266,7 @@ class DmEnvAdaptor(dm_env.Environment):
   def close(self):
     """Implements dm_env.Environment.close."""
     # Release any extensions associated with this EnvAdaptor:
-    for extension_name in (self._extension_names or []):
+    for extension_name in self._extension_names:
       setattr(self, extension_name, None)
     # Leaves the world if we were joined.  If not, this will be a no-op anyway.
     if self._connection is not None:
