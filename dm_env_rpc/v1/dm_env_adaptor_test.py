@@ -636,6 +636,38 @@ class CreateJoinHelpers(absltest.TestCase):
                 }""", dm_env_rpc_pb2.JoinWorldRequest())),
     ])
 
+  def test_flatten_create_join_world_settings(self):
+    connection = mock.MagicMock()
+    connection.send = mock.MagicMock(side_effect=[
+        dm_env_rpc_pb2.CreateWorldResponse(world_name='Damogran_01'),
+        dm_env_rpc_pb2.JoinWorldResponse(specs=_SAMPLE_SPEC)
+    ])
+    env, world_name = dm_env_adaptor.create_and_join_world(
+        connection,
+        create_world_settings={'nested': {'planet': 'Damogran'}},
+        join_world_settings={'nested': {'ship_type': 1, 'player': 'zaphod'}})
+    self.assertIsNotNone(env)
+    self.assertEqual('Damogran_01', world_name)
+
+    connection.send.assert_has_calls([
+        mock.call(
+            text_format.Parse(
+                """settings: {
+                key: 'nested.planet', value: { strings: { array: 'Damogran' } }
+            }""", dm_env_rpc_pb2.CreateWorldRequest())),
+        mock.call(
+            text_format.Parse(
+                """world_name: 'Damogran_01'
+                settings: {
+                  key: 'nested.ship_type', value: { int64s: { array: 1 } }
+                }
+                settings: {
+                    key: 'nested.player', value: {
+                        strings: { array: 'zaphod' }
+                    }
+                }""", dm_env_rpc_pb2.JoinWorldRequest())),
+    ])
+
   def test_create_join_world_with_packed_settings(self):
     connection = mock.MagicMock()
     connection.send = mock.MagicMock(side_effect=[

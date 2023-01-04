@@ -49,7 +49,6 @@ class DmEnvAdaptor(dm_env.Environment):
   Users can also optionally provide a mapping of objects to DmEnvAdaptor
   attributes. This is to accommodate user-created protocol extensions that
   compliment the core protocol.
-
   """
 
   # Disable pytype attribute checking for dynamically created extension attrs.
@@ -285,12 +284,16 @@ def create_world(connection: dm_env_rpc_connection.ConnectionType,
   Args:
     connection: An instance of Connection already connected to a dm_env_rpc
       server.
-    create_world_settings: Settings used to create the world. Values must be
-      packable into a Tensor proto or already packed.
+    create_world_settings: Settings used to create the world. Nested settings
+      will be automatically flattened before sending to the server. Values must
+      be packable into a Tensor proto or already packed.
 
   Returns:
     Created world name.
   """
+  create_world_settings = dm_env_flatten_utils.flatten_dict(
+      create_world_settings, DEFAULT_KEY_SEPARATOR
+  )
 
   create_world_settings = {
       key: (value if isinstance(value, dm_env_rpc_pb2.Tensor) else
@@ -314,7 +317,8 @@ def join_world(
     connection: An instance of Connection already connected to a dm_env_rpc
       server.
     world_name: Name of the world to join.
-    join_world_settings: Settings used to join the world. Values must be
+    join_world_settings: Settings used to join the world. Nested settings will
+      be automatically flattened before sending to the server. Values must be
       packable into a Tensor message or already packed.
     **adaptor_kwargs: Additional keyword args used to create the DmEnvAdaptor
       instance.
@@ -322,6 +326,9 @@ def join_world(
   Returns:
     Instance of DmEnvAdaptor.
   """
+  join_world_settings = dm_env_flatten_utils.flatten_dict(
+      join_world_settings, DEFAULT_KEY_SEPARATOR
+  )
 
   join_world_settings = {
       key: (value if isinstance(value, dm_env_rpc_pb2.Tensor) else
@@ -356,7 +363,8 @@ def create_and_join_world(connection: dm_env_rpc_connection.ConnectionType,
       server.
     create_world_settings: Settings used to create the world. Values must be
       packable into a Tensor proto or already packed.
-    join_world_settings: Settings used to join the world. Values must be
+    join_world_settings: Settings used to join the world. Nested settings will
+      be automatically flattened before sending to the server. Values must be
       packable into a Tensor message.
     **adaptor_kwargs: Additional keyword args used to create the DmEnvAdaptor
       instance.
@@ -372,4 +380,3 @@ def create_and_join_world(connection: dm_env_rpc_connection.ConnectionType,
   except (error.DmEnvRpcError, ValueError):
     connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
     raise
-
