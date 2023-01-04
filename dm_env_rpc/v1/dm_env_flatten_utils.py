@@ -17,8 +17,12 @@
 from typing import Any, Dict, Mapping
 
 
-def flatten_dict(input_dict: Mapping[str, Any],
-                 separator: str) -> Dict[str, Any]:
+def flatten_dict(
+    input_dict: Mapping[str, Any],
+    separator: str,
+    *,
+    strict: bool = True,
+) -> Dict[str, Any]:
   """Flattens mappings by joining sub-keys using the provided separator.
 
   Only non-empty, mapping types will be flattened. All other types are deemed
@@ -27,17 +31,19 @@ def flatten_dict(input_dict: Mapping[str, Any],
   Args:
     input_dict: Mapping of key-value pairs to flatten.
     separator: Delimiter used to concatenate keys.
+    strict: Whether to permit keys that already contain the separator. Setting
+      this to False will cause unflattening to be ambiguous.
 
   Returns:
     Flattened dictionary of key-value pairs.
 
   Raises:
     ValueError: If the `input_dict` has a key that contains the separator
-      string.
+      string, and strict is set to False.
   """
   result: Dict[str, Any] = {}
   for key, value in input_dict.items():
-    if separator in key:
+    if strict and separator in key:
       raise ValueError(
           f"Can not safely flatten dictionary: key '{key}' already contains "
           f"the separator '{separator}'!"
@@ -45,7 +51,8 @@ def flatten_dict(input_dict: Mapping[str, Any],
     if isinstance(value, Mapping) and len(value):
       result.update({
           f'{key}{separator}{sub_key}': sub_value
-          for sub_key, sub_value in flatten_dict(value, separator).items()
+          for sub_key, sub_value in flatten_dict(
+              value, separator, strict=strict).items()
       })
     else:
       result[key] = value

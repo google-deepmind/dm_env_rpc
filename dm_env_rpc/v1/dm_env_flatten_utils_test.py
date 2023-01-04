@@ -77,7 +77,16 @@ class FlattenUtilsTest(absltest.TestCase):
         dm_env_flatten_utils.unflatten_dict(
             dm_env_flatten_utils.flatten_dict(input_output, '.'), '.'))
 
-  def test_flatten_with_key_containing_separator_raises_error(self):
+  def test_flatten_with_key_containing_separator(self):
+    input_dict = {'foo.bar': {'baz': 123}, 'bar': {'foo.baz': 456}}
+    expected = {'foo.bar.baz': 123, 'bar.foo.baz': 456}
+
+    self.assertSameElements(
+        expected,
+        dm_env_flatten_utils.flatten_dict(input_dict, '.', strict=False),
+    )
+
+  def test_flatten_with_key_containing_separator_strict_raises_error(self):
     with self.assertRaisesRegex(ValueError, 'foo.bar'):
       dm_env_flatten_utils.flatten_dict({'foo.bar': True}, '.')
 
