@@ -1,5 +1,11 @@
 # Release Notes
 
+## [1.1.5]
+
+*   Add optional `strict` argument to dictionary flattening.
+*   Relax flattening of create/join world settings, so that users can pass
+    already flattened settings.
+
 ## [1.1.4]
 
 *   Support for nested create/join world settings in `dm_env_adaptor` helper
