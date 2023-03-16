@@ -18,7 +18,7 @@ Note that the Tensor proto payload type is not supported, as it doesn't play
 well with NumPy.
 """
 import abc
-from typing import Optional, Union
+from typing import Optional, Type, Union
 import numpy as np
 
 from google.protobuf import any_pb2
@@ -52,8 +52,8 @@ TensorOrTensorSpecValue = Union[dm_env_rpc_pb2.Tensor,
 class Packer(metaclass=abc.ABCMeta):
   """Converts between proto messages and NumPy arrays."""
 
-  def __init__(self, name: str, np_type: np.dtype):
-    self._np_type = np_type
+  def __init__(self, name: str, np_type: Union[np.dtype, Type[np.generic]]):
+    self._np_type = np.dtype(np_type)
     self._name = name
 
   @property
