@@ -52,8 +52,8 @@ TensorOrTensorSpecValue = Union[dm_env_rpc_pb2.Tensor,
 class Packer(metaclass=abc.ABCMeta):
   """Converts between proto messages and NumPy arrays."""
 
-  def __init__(self, name: str, np_type: Union[np.dtype, Type[np.generic]]):
-    self._np_type = np.dtype(np_type)
+  def __init__(self, name: str, np_type: np.dtype):
+    self._np_type = np_type
     self._name = name
 
   @property
@@ -125,14 +125,14 @@ class _RepeatedProtoFieldPacker(Packer):
 
 
 _PACKERS = (
-    _RepeatedFieldPacker('floats', np.float32),
-    _RepeatedFieldPacker('doubles', np.float64),
-    _BytesPacker('int8s', np.int8),
-    _RepeatedFieldPacker('int32s', np.int32),
-    _RepeatedFieldPacker('int64s', np.int64),
-    _BytesPacker('uint8s', np.uint8),
-    _RepeatedFieldPacker('uint32s', np.uint32),
-    _RepeatedFieldPacker('uint64s', np.uint64),
+    _RepeatedFieldPacker('floats', np.dtype(np.float32)),
+    _RepeatedFieldPacker('doubles', np.dtype(np.float64)),
+    _BytesPacker('int8s', np.dtype(np.int8)),
+    _RepeatedFieldPacker('int32s', np.dtype(np.int32)),
+    _RepeatedFieldPacker('int64s', np.dtype(np.int64)),
+    _BytesPacker('uint8s', np.dtype(np.uint8)),
+    _RepeatedFieldPacker('uint32s', np.dtype(np.uint32)),
+    _RepeatedFieldPacker('uint64s', np.dtype(np.uint64)),
     _RepeatedFieldPacker('bools', np.dtype(bool)),
     _RepeatedStringFieldPacker('strings', np.dtype(str)),
     _RepeatedProtoFieldPacker('protos', np.dtype(object)),
@@ -142,19 +142,17 @@ _NAME_TO_NP_TYPE = {
     packer.name: packer.np_type for packer in _PACKERS
 }
 
-_TYPE_TO_PACKER = {
-    np.dtype(packer.np_type): packer for packer in _PACKERS
-}
+_TYPE_TO_PACKER = {packer.np_type: packer for packer in _PACKERS}
 
 _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE = {
-    dm_env_rpc_pb2.DataType.FLOAT: np.float32,
-    dm_env_rpc_pb2.DataType.DOUBLE: np.float64,
-    dm_env_rpc_pb2.DataType.INT8: np.int8,
-    dm_env_rpc_pb2.DataType.INT32: np.int32,
-    dm_env_rpc_pb2.DataType.INT64: np.int64,
-    dm_env_rpc_pb2.DataType.UINT8: np.uint8,
-    dm_env_rpc_pb2.DataType.UINT32: np.uint32,
-    dm_env_rpc_pb2.DataType.UINT64: np.uint64,
+    dm_env_rpc_pb2.DataType.FLOAT: np.dtype(np.float32),
+    dm_env_rpc_pb2.DataType.DOUBLE: np.dtype(np.float64),
+    dm_env_rpc_pb2.DataType.INT8: np.dtype(np.int8),
+    dm_env_rpc_pb2.DataType.INT32: np.dtype(np.int32),
+    dm_env_rpc_pb2.DataType.INT64: np.dtype(np.int64),
+    dm_env_rpc_pb2.DataType.UINT8: np.dtype(np.uint8),
+    dm_env_rpc_pb2.DataType.UINT32: np.dtype(np.uint32),
+    dm_env_rpc_pb2.DataType.UINT64: np.dtype(np.uint64),
     dm_env_rpc_pb2.DataType.BOOL: np.dtype(bool),
     dm_env_rpc_pb2.DataType.STRING: np.dtype(str),
     dm_env_rpc_pb2.DataType.PROTO: np.dtype(object),
@@ -186,23 +184,21 @@ def data_type_to_np_type(dm_env_rpc_dtype: dm_env_rpc_pb2.DataType) -> np.dtype:
   np_type = _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dm_env_rpc_dtype)
   if not np_type:
     raise TypeError(f'Unknown DataType {dm_env_rpc_dtype}')
-  return np.dtype(np_type)
+  return np_type
 
 
-def np_type_to_data_type(np_type: np.dtype) -> dm_env_rpc_pb2.DataType:
+def np_type_to_data_type(
+    np_type: Union[np.dtype, Type[np.generic]]
+) -> dm_env_rpc_pb2.DataType:
   """Returns the dm_env_rpc DataType for the given NumPy type."""
-  if isinstance(np_type, np.dtype):
-    # Flatten scalar types, since np.int32 is different from np.dtype(np.int32)
-    # for dict key lookup.
-    np_type = np_type.type
-  data_type = _NUMPY_DTYPE_TO_DM_ENV_RPC_DTYPE.get(np_type)
+  data_type = _NUMPY_DTYPE_TO_DM_ENV_RPC_DTYPE.get(np.dtype(np_type))
   if data_type is None:
     raise TypeError(
         f'No dm_env_rpc DataType corresponds to NumPy type "{np_type}"')
   return data_type
 
 
-def get_packer(np_type: np.dtype) -> Packer:
+def get_packer(np_type: Union[np.dtype, Type[np.generic]]) -> Packer:
   """Retrieves the `Packer` which can handle the given NumPy Type.
 
   Note: The returned packer is a relatively low level mechanism to convert
