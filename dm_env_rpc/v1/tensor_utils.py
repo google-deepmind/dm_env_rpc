@@ -271,10 +271,13 @@ def unpack_tensor(tensor_proto: dm_env_rpc_pb2.Tensor):
   return reshape_array(array, tensor_proto.shape)
 
 
-def pack_tensor(value,
-                dtype: Optional[Union[np.dtype,
-                                      'dm_env_rpc_pb2.DataType']] = None,
-                try_compress=False) -> dm_env_rpc_pb2.Tensor:
+def pack_tensor(
+    value,
+    dtype: Optional[
+        Union[np.dtype, Type[np.generic], 'dm_env_rpc_pb2.DataType']
+    ] = None,
+    try_compress=False,
+) -> dm_env_rpc_pb2.Tensor:
   """Encodes the given value as a tensor.
 
   Args:
