@@ -14,11 +14,10 @@
 # ============================================================================
 """Install script for setuptools."""
 
-from distutils import cmd
 import importlib.util
 import os
 
-import pkg_resources
+from setuptools import Command
 from setuptools import find_packages
 from setuptools import setup
 from setuptools.command.build_ext import build_ext
@@ -26,16 +25,19 @@ from setuptools.command.build_py import build_py
 
 
 _ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-_GOOGLE_COMMON_PROTOS_ROOT_DIR = os.path.join(_ROOT_DIR,
-                                              'third_party/api-common-protos')
+_GOOGLE_COMMON_PROTOS_ROOT_DIR = os.path.join(
+    _ROOT_DIR, 'third_party/api-common-protos'
+)
 
 # Tuple of proto message definitions to build Python bindings for. Paths must
 # be relative to root directory.
-_DM_ENV_RPC_PROTOS = ('dm_env_rpc/v1/dm_env_rpc.proto',
-                      'dm_env_rpc/v1/extensions/properties.proto')
+_DM_ENV_RPC_PROTOS = (
+    'dm_env_rpc/v1/dm_env_rpc.proto',
+    'dm_env_rpc/v1/extensions/properties.proto',
+)
 
 
-class _GenerateProtoFiles(cmd.Command):
+class _GenerateProtoFiles(Command):
   """Command to generate protobuf bindings for dm_env_rpc.proto."""
 
   descriptions = 'Generates Python protobuf bindings for dm_env_rpc.proto.'
@@ -48,33 +50,35 @@ class _GenerateProtoFiles(cmd.Command):
     pass
 
   def run(self):
-    # Import grpc_tools here, after setuptools has installed setup_requires
-    # dependencies.
+    # Import grpc_tools and importlib_resources here, after setuptools has
+    # installed setup_requires dependencies.
     from grpc_tools import protoc  # pylint: disable=g-import-not-at-top
+    import importlib_resources  # pylint: disable=g-import-not-at-top
 
     if not os.path.exists(
-        os.path.join(_GOOGLE_COMMON_PROTOS_ROOT_DIR,
-                     'google/rpc/status.proto')):
+        os.path.join(_GOOGLE_COMMON_PROTOS_ROOT_DIR, 'google/rpc/status.proto')
+    ):
       raise RuntimeError(
           'Cannot find third_party/api-common-protos. '
           'Please run `git submodule init && git submodule update` to install '
           'the api-common-protos submodule.'
       )
-    grpc_protos_include = pkg_resources.resource_filename(
-        'grpc_tools', '_proto')
 
-    for proto_path in _DM_ENV_RPC_PROTOS:
-      proto_args = [
-          'grpc_tools.protoc',
-          '--proto_path={}'.format(_GOOGLE_COMMON_PROTOS_ROOT_DIR),
-          '--proto_path={}'.format(grpc_protos_include),
-          '--proto_path={}'.format(_ROOT_DIR),
-          '--python_out={}'.format(_ROOT_DIR),
-          '--grpc_python_out={}'.format(_ROOT_DIR),
-          os.path.join(_ROOT_DIR, proto_path),
-      ]
-      if protoc.main(proto_args) != 0:
-        raise RuntimeError('ERROR: {}'.format(proto_args))
+    with importlib_resources.as_file(
+        importlib_resources.files('grpc_tools') / '_proto'
+    ) as grpc_protos_include:
+      for proto_path in _DM_ENV_RPC_PROTOS:
+        proto_args = [
+            'grpc_tools.protoc',
+            '--proto_path={}'.format(_GOOGLE_COMMON_PROTOS_ROOT_DIR),
+            '--proto_path={}'.format(grpc_protos_include),
+            '--proto_path={}'.format(_ROOT_DIR),
+            '--python_out={}'.format(_ROOT_DIR),
+            '--grpc_python_out={}'.format(_ROOT_DIR),
+            os.path.join(_ROOT_DIR, proto_path),
+        ]
+        if protoc.main(proto_args) != 0:
+          raise RuntimeError('ERROR: {}'.format(proto_args))
 
 
 class _BuildExt(build_ext):
@@ -95,8 +99,9 @@ class _BuildPy(build_py):
 
 def _load_version():
   """Load dm_env_rpc version."""
-  spec = importlib.util.spec_from_file_location('_version',
-                                                'dm_env_rpc/_version.py')
+  spec = importlib.util.spec_from_file_location(
+      '_version', 'dm_env_rpc/_version.py'
+  )
   version_module = importlib.util.module_from_spec(spec)
   spec.loader.exec_module(version_module)
   return version_module.__version__
@@ -125,7 +130,7 @@ setup(
         'nose',
     ],
     python_requires='>=3.7',
-    setup_requires=['grpcio-tools'],
+    setup_requires=['grpcio-tools', 'importlib_resources'],
     extras_require={
         'examples': ['pygame'],
     },
