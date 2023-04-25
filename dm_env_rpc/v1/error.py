@@ -14,6 +14,8 @@
 # ============================================================================
 
 """Provides custom Pythonic errors for dm_env_rpc error messages."""
+from typing import Iterable
+from google.protobuf import any_pb2
 from google.rpc import status_pb2
 
 
@@ -34,6 +36,10 @@ class DmEnvRpcError(Exception):
   @property
   def message(self) -> str:
     return self._status_proto.message
+
+  @property
+  def details(self) -> Iterable[any_pb2.Any]:
+    return self._status_proto.details
 
   def __str__(self):
     return str(self._status_proto)
