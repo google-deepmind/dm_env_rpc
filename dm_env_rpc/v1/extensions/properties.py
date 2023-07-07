@@ -20,7 +20,7 @@ responses using the provided dm_env_rpc.v1.connection.Connection instance to
 send and receive extension messages.
 
 Example Usage:
-  property_extension = PropertyExtension(connection)
+  property_extension = PropertiesExtension(connection)
 
   # To read a property:
   value = property_extension['my_property']
