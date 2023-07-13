@@ -14,7 +14,8 @@
 # ============================================================================
 """An implementation of a dm_env environment using dm_env_rpc."""
 
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+import enum
+from typing import Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dm_env
 import immutabledict
@@ -43,6 +44,20 @@ before: "{specs}"
 after: "{new_specs}"'''
 
 
+class AutoObservations(enum.Flag):
+  """Options for requesting all available observations."""
+
+  # Default value for `requested_observations`: requests to receive all
+  # available observations except for `reward` and `discount`. (These will
+  # still be processed, but not returned as *observations*).
+  REQUEST_REGULAR_OBSERVATIONS = 0
+  REQUEST_REWARD = 1
+  REQUEST_DISCOUNT = 2
+  REQUEST_ALL_OBSERVATIONS = (
+      REQUEST_REGULAR_OBSERVATIONS | REQUEST_REWARD | REQUEST_DISCOUNT
+  )
+
+
 class DmEnvAdaptor(dm_env.Environment):
   """An implementation of dm_env using dm_env_rpc as the data protocol.
 
@@ -58,7 +73,9 @@ class DmEnvAdaptor(dm_env.Environment):
       self,
       connection: dm_env_rpc_connection.ConnectionType,
       specs: dm_env_rpc_pb2.ActionObservationSpecs,
-      requested_observations: Optional[Sequence[str]] = None,
+      requested_observations: Optional[
+          Union[Sequence[str], AutoObservations]
+      ] = AutoObservations.REQUEST_REGULAR_OBSERVATIONS,
       nested_tensors: bool = True,
       extensions: Mapping[str, Any] = immutabledict.immutabledict()):
     """Initializes the environment with the provided dm_env_rpc connection.
@@ -68,8 +85,8 @@ class DmEnvAdaptor(dm_env.Environment):
         dm_env_rpc server and after a successful JoinWorldRequest has been sent.
       specs: A dm_env_rpc ActionObservationSpecs message for the environment.
       requested_observations: List of observation names to be requested from the
-        environment when step is called. If None is specified then all
-        observations will be requested.
+        environment when step is called. Default is to request all observations
+        except for ones named `reward` or `discount`.
       nested_tensors: Boolean to determine whether to flatten/unflatten tensors.
       extensions: Mapping of extension instances to DmEnvAdaptor attributes.
         Raises ValueError if attribute already exists.
@@ -82,13 +99,22 @@ class DmEnvAdaptor(dm_env.Environment):
     self._nested_tensors = nested_tensors
 
     if requested_observations is None:
+      # For backwards-compatibility
+      requested_observations = AutoObservations.REQUEST_REGULAR_OBSERVATIONS
+
+    if isinstance(requested_observations, AutoObservations):
+      self._is_reward_requested = (
+          AutoObservations.REQUEST_REWARD in requested_observations
+      )
+      self._is_discount_requested = (
+          AutoObservations.REQUEST_DISCOUNT in requested_observations
+      )
       requested_observations = self._observation_specs.names()
-      self._is_reward_requested = False
-      self._is_discount_requested = False
     else:
       self._is_reward_requested = DEFAULT_REWARD_KEY in requested_observations
       self._is_discount_requested = (
-          DEFAULT_DISCOUNT_KEY in requested_observations)
+          DEFAULT_DISCOUNT_KEY in requested_observations
+      )
 
     requested_observations = set(requested_observations)
 
@@ -96,19 +122,24 @@ class DmEnvAdaptor(dm_env.Environment):
     self._default_discount_spec = None
     if DEFAULT_REWARD_KEY in self._observation_specs.names():
       self._default_reward_spec = dm_env_utils.tensor_spec_to_dm_env_spec(
-          self._observation_specs.name_to_spec(DEFAULT_REWARD_KEY))
+          self._observation_specs.name_to_spec(DEFAULT_REWARD_KEY)
+      )
       requested_observations.add(DEFAULT_REWARD_KEY)
     if DEFAULT_DISCOUNT_KEY in self._observation_specs.names():
-      self._default_discount_spec = (
-          dm_env_utils.tensor_spec_to_dm_env_spec(
-              self._observation_specs.name_to_spec(DEFAULT_DISCOUNT_KEY)))
+      self._default_discount_spec = dm_env_utils.tensor_spec_to_dm_env_spec(
+          self._observation_specs.name_to_spec(DEFAULT_DISCOUNT_KEY)
+      )
       requested_observations.add(DEFAULT_DISCOUNT_KEY)
 
     unsupported_observations = requested_observations.difference(
-        self._observation_specs.names())
+        self._observation_specs.names()
+    )
     if unsupported_observations:
-      raise ValueError('Unsupported observations requested: {}'.format(
-          unsupported_observations))
+      raise ValueError(
+          'Unsupported observations requested: {}'.format(
+              unsupported_observations
+          )
+      )
     self._requested_observation_uids = [
         self._observation_specs.name_to_uid(name)
         for name in requested_observations

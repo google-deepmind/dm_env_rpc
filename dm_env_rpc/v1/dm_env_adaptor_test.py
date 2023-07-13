@@ -420,6 +420,54 @@ class ReservedKeywordTests(absltest.TestCase):
     self.assertEqual(env.observation_spec(), expected_observation_spec)
 
 
+class AutoObservationsTests(parameterized.TestCase):
+  """Test the handling of the AutoObservations flags."""
+
+  @parameterized.named_parameters(
+      (
+          'regular',
+          dm_env_adaptor.AutoObservations.REQUEST_REGULAR_OBSERVATIONS,
+          [],
+      ),
+      (
+          'none',
+          None,
+          [],
+      ),
+      (
+          'reward',
+          dm_env_adaptor.AutoObservations.REQUEST_REGULAR_OBSERVATIONS
+          | dm_env_adaptor.AutoObservations.REQUEST_REWARD,
+          [dm_env_adaptor.DEFAULT_REWARD_KEY],
+      ),
+      (
+          'discount',
+          dm_env_adaptor.AutoObservations.REQUEST_REGULAR_OBSERVATIONS
+          | dm_env_adaptor.AutoObservations.REQUEST_DISCOUNT,
+          [dm_env_adaptor.DEFAULT_DISCOUNT_KEY],
+      ),
+      (
+          'all',
+          dm_env_adaptor.AutoObservations.REQUEST_ALL_OBSERVATIONS,
+          [
+              dm_env_adaptor.DEFAULT_REWARD_KEY,
+              dm_env_adaptor.DEFAULT_DISCOUNT_KEY,
+          ],
+      ),
+  )
+  def test_auto_observations(self, requested_observations, expected):
+    self._connection = mock.MagicMock()
+    env = dm_env_adaptor.DmEnvAdaptor(
+        self._connection,
+        _RESERVED_SPEC,
+        requested_observations=requested_observations,
+    )
+    spec = env.observation_spec()
+    self.assertEqual(len(expected), len(spec))
+    for key in expected:
+      self.assertIn(key, spec)
+
+
 class EnvironmentAutomaticallyRequestsReservedKeywords(absltest.TestCase):
 
   def setUp(self):
