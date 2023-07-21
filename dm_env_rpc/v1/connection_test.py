@@ -139,6 +139,25 @@ class ConnectionTests(absltest.TestCase):
     mock_secure_channel.assert_called_once()
     mock_channel.close.assert_called_once()
 
+  @mock.patch.object(grpc, 'secure_channel')
+  @mock.patch.object(grpc, 'channel_ready_future')
+  @mock.patch.object(dm_env_rpc_connection, 'StreamReaderWriter')
+  def test_create_secure_channel_and_connect_metadata(
+      self, mock_stream_writer, mock_channel_ready, mock_secure_channel
+  ):
+    mock_channel = mock.MagicMock()
+    mock_secure_channel.return_value = mock_channel
+    metadata = [('upstream', 'fake_address')]
+    with dm_env_rpc_connection.create_secure_channel_and_connect(
+        'valid_address', metadata=metadata
+    ) as connection:
+      self.assertIsNotNone(connection)
+
+    mock_channel_ready.assert_called_once_with(mock_channel)
+    mock_secure_channel.assert_called_once()
+    mock_channel.close.assert_called_once()
+    mock_stream_writer.assert_called_once_with(mock.ANY, metadata)
+
   def test_create_secure_channel_and_connect_timeout(self):
     with self.assertRaises(grpc.FutureTimeoutError):
       dm_env_rpc_connection.create_secure_channel_and_connect(

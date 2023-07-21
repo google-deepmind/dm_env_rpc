@@ -52,12 +52,12 @@ from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import message_utils
 
-# pylint: disable=g-import-not-at-top
+# pylint: disable=g-import-not-at-top,unreachable,g-bad-import-order
 if sys.version_info < (3, 8):
   from typing_extensions import Protocol
 else:
   from typing import Protocol
-# pylint: enable=g-import-not-at-top
+# pylint: enable=g-import-not-at-top,unreachable,g-bad-import-order
 
 Metadata = Sequence[Tuple[str, str]]
 
@@ -157,7 +157,9 @@ class Connection(object):
 def create_secure_channel_and_connect(
     server_address: str,
     credentials: grpc.ChannelCredentials = grpc.local_channel_credentials(),
-    timeout: Optional[float] = None) -> Connection:
+    timeout: Optional[float] = None,
+    metadata: Optional[Metadata] = None,
+) -> Connection:
   """Creates a secure channel from server address and credentials and connects.
 
   We allow the created channel to have un-bounded message lengths, to support
@@ -168,6 +170,8 @@ def create_secure_channel_and_connect(
     credentials: gRPC credentials necessary to connect to the server.
     timeout: Optional timeout in seconds to wait for channel to be ready.
       Default to waiting indefinitely.
+    metadata: Optional sequence of 2-tuples, sent to the gRPC server as
+        metadata.
 
   Returns:
     An instance of dm_env_rpc.Connection, where the channel is close upon the
@@ -181,8 +185,8 @@ def create_secure_channel_and_connect(
   class _ConnectionWrapper(Connection):
     """Utility to ensure channel is closed when the connection is closed."""
 
-    def __init__(self, channel):
-      super().__init__(channel)
+    def __init__(self, channel, metadata):
+      super().__init__(channel=channel, metadata=metadata)
       self._channel = channel
 
     def __del__(self):
@@ -192,4 +196,4 @@ def create_secure_channel_and_connect(
       super().close()
       self._channel.close()
 
-  return _ConnectionWrapper(channel)
+  return _ConnectionWrapper(channel=channel, metadata=metadata)
