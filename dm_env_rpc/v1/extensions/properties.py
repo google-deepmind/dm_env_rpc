@@ -121,7 +121,7 @@ class PropertySpec(object):
 class PropertiesExtension(object):
   """Helper class for sending and receiving property requests and responses."""
 
-  def __init__(self, connection: dm_env_rpc_connection.Connection):
+  def __init__(self, connection: dm_env_rpc_connection.ConnectionType):
     """Construct extension with provided dm_env_rpc connection to the env.
 
     Args:

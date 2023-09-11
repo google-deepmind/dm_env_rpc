@@ -17,7 +17,7 @@ from dm_env_rpc.v1 import connection as dm_env_rpc_connection
 from google.protobuf import any_pb2
 from google.protobuf import struct_pb2
 
-def send_custom_message(connection: dm_env_rpc_connection.Connection):
+def send_custom_message(connection: dm_env_rpc_connection.ConnectionType):
   """Send/receive custom Struct message through a dm_env_rpc connection."""
   my_message = struct_pb2.Struct(
           fields={'foo': struct_pb2.Value(string_value='bar')})
