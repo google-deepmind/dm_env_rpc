@@ -126,7 +126,6 @@ setup(
     ],
     tests_require=[
         'absl-py',
-        'asynctest',
         'nose',
     ],
     python_requires='>=3.7',
