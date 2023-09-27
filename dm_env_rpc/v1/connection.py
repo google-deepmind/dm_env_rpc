@@ -44,20 +44,12 @@ exceptions, so explicit error handling code isn't needed per call.
 """
 
 import queue
-import sys
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Protocol, Sequence, Tuple
 import grpc
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import message_utils
-
-# pylint: disable=g-import-not-at-top,unreachable,g-bad-import-order
-if sys.version_info < (3, 8):
-  from typing_extensions import Protocol
-else:
-  from typing import Protocol
-# pylint: enable=g-import-not-at-top,unreachable,g-bad-import-order
 
 Metadata = Sequence[Tuple[str, str]]
 

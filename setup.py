@@ -122,7 +122,6 @@ setup(
         'grpcio',
         'numpy',
         'protobuf>=3.8',
-        'typing_extensions;python_version<"3.8"',
     ],
     tests_require=[
         'absl-py',
@@ -147,7 +146,6 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: MacOS :: MacOS X',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
