@@ -1,5 +1,16 @@
 # Release Notes
 
+## [1.1.6]
+
+*   New `AsyncConnection` class that allows users to make asynchronous requests
+    via `asyncio`.
+*   Add optional `metadata` argument to `create_secure_channel_and_connect`.
+*   Expose error status details in `DmEnvRpcError` exception.
+*   Improvements and fixes related to type hints, in particular hints relating
+    to NumPy.
+*   Add utility functions for packing/unpacking custom request/responses.
+*   Remove support for Python 3.7, now that it has reached EOL.
+
 ## [1.1.5]
 
 *   Add optional `strict` argument to dictionary flattening.
