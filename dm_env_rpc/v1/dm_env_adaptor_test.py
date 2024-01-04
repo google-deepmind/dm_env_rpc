@@ -280,8 +280,15 @@ class DmEnvAdaptorTests(absltest.TestCase):
     self._connection.send = mock.MagicMock(
         return_value=dm_env_rpc_pb2.LeaveWorldResponse())
     self._env.close()
-    with self.assertRaisesRegex(AttributeError, 'send'):
+    with self.assertRaisesRegex(ValueError, 'connection'):
       self._env.step({})
+
+  def test_cant_reset_after_close(self):
+    self._connection.send = mock.MagicMock(
+        return_value=dm_env_rpc_pb2.LeaveWorldResponse())
+    self._env.close()
+    with self.assertRaisesRegex(ValueError, 'connection'):
+      self._env.reset()
 
   def test_reward_spec_default(self):
     self.assertEqual(

@@ -130,6 +130,8 @@ class Connection(object):
     """
     environment_request, field_name = (
         message_utils.pack_environment_request(request))
+    if self._stream is None:
+      raise ValueError('Cannot send request after stream is closed.')
     self._stream.write(environment_request)
     return message_utils.unpack_environment_response(self._stream.read(),
                                                      field_name)

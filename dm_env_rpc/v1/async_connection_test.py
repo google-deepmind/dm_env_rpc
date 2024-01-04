@@ -106,6 +106,13 @@ class AsyncConnectionAsyncTests(unittest.IsolatedAsyncioTestCase):
         response = await connection.send(_CREATE_REQUEST)
         self.assertEqual(_CREATE_RESPONSE, response)
 
+  async def test_send_error_after_close(self):
+    with _create_mock_async_channel() as mock_channel:
+      with async_connection.AsyncConnection(mock_channel) as connection:
+        connection.close()
+        with self.assertRaisesRegex(ValueError, 'stream is closed'):
+          await connection.send(_CREATE_REQUEST)
+
   async def test_error(self):
     with _create_mock_async_channel() as mock_channel:
       with async_connection.AsyncConnection(mock_channel) as connection:

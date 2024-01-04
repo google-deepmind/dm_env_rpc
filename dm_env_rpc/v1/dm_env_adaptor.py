@@ -157,6 +157,8 @@ class DmEnvAdaptor(dm_env.Environment):
 
   def reset(self):
     """Implements dm_env.Environment.reset."""
+    if self._connection is None:
+      raise ValueError('Cannot reset environment after connection is closed.')
     reset_response = self._connection.send(dm_env_rpc_pb2.ResetRequest())
     if self._dm_env_rpc_specs != reset_response.specs:
       raise RuntimeError(_RESET_ENVIRONMENT_ERROR.format(
@@ -168,6 +170,8 @@ class DmEnvAdaptor(dm_env.Environment):
     """Implements dm_env.Environment.step."""
     actions = dm_env_flatten_utils.flatten_dict(
         actions, DEFAULT_KEY_SEPARATOR) if self._nested_tensors else actions
+    if self._connection is None:
+      raise ValueError('Cannot step environment, connection is closed.')
     step_response = self._connection.send(
         dm_env_rpc_pb2.StepRequest(
             requested_observations=self._requested_observation_uids,

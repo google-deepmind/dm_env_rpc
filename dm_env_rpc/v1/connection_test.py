@@ -93,6 +93,13 @@ class ConnectionTests(absltest.TestCase):
         response = connection.send(_CREATE_REQUEST)
         self.assertEqual(_CREATE_RESPONSE, response)
 
+  def test_send_error_after_close(self):
+    with _create_mock_channel() as mock_channel:
+      with dm_env_rpc_connection.Connection(mock_channel) as connection:
+        connection.close()
+        with self.assertRaisesRegex(ValueError, 'stream is closed'):
+          connection.send(_CREATE_REQUEST)
+
   def test_error(self):
     with _create_mock_channel() as mock_channel:
       with dm_env_rpc_connection.Connection(mock_channel) as connection:

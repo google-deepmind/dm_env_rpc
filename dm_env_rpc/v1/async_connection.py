@@ -91,6 +91,8 @@ class AsyncConnection:
     """
     environment_request, field_name = (
         message_utils.pack_environment_request(request))
+    if self._stream is None:
+      raise ValueError('Cannot send request after stream is closed.')
     await self._stream.write(environment_request)
     return message_utils.unpack_environment_response(await self._stream.read(),
                                                      field_name)
