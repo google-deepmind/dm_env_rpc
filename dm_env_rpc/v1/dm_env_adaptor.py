@@ -77,7 +77,8 @@ class DmEnvAdaptor(dm_env.Environment):
           Union[Sequence[str], AutoObservations]
       ] = AutoObservations.REQUEST_REGULAR_OBSERVATIONS,
       nested_tensors: bool = True,
-      extensions: Mapping[str, Any] = immutabledict.immutabledict()):
+      extensions: Mapping[str, Any] = immutabledict.immutabledict(),
+  ):
     """Initializes the environment with the provided dm_env_rpc connection.
 
     Args:
@@ -152,7 +153,8 @@ class DmEnvAdaptor(dm_env.Environment):
     for extension_name, extension in extensions.items():
       if hasattr(self, extension_name):
         raise ValueError(
-            f'DmEnvAdaptor already has attribute "{extension_name}"!')
+            f'DmEnvAdaptor already has attribute "{extension_name}"!'
+        )
       setattr(self, extension_name, extension)
 
   def reset(self):
@@ -160,27 +162,50 @@ class DmEnvAdaptor(dm_env.Environment):
     if self._connection is None:
       raise ValueError('Cannot reset environment after connection is closed.')
     reset_response = self._connection.send(dm_env_rpc_pb2.ResetRequest())
+
+    if not isinstance(reset_response, dm_env_rpc_pb2.ResetResponse):
+      raise RuntimeError(
+          'ResetRequest failed to return a valid reset response, instead'
+          f' got: {reset_response}'
+      )
+
     if self._dm_env_rpc_specs != reset_response.specs:
-      raise RuntimeError(_RESET_ENVIRONMENT_ERROR.format(
-          specs=self._dm_env_rpc_specs, new_specs=reset_response.specs))
+      raise RuntimeError(
+          _RESET_ENVIRONMENT_ERROR.format(
+              specs=self._dm_env_rpc_specs, new_specs=reset_response.specs
+          )
+      )
     self._last_state = dm_env_rpc_pb2.EnvironmentStateType.INTERRUPTED
     return self.step({})
 
   def step(self, actions):
     """Implements dm_env.Environment.step."""
-    actions = dm_env_flatten_utils.flatten_dict(
-        actions, DEFAULT_KEY_SEPARATOR) if self._nested_tensors else actions
+    actions = (
+        dm_env_flatten_utils.flatten_dict(actions, DEFAULT_KEY_SEPARATOR)
+        if self._nested_tensors
+        else actions
+    )
     if self._connection is None:
       raise ValueError('Cannot step environment, connection is closed.')
     step_response = self._connection.send(
         dm_env_rpc_pb2.StepRequest(
             requested_observations=self._requested_observation_uids,
-            actions=self._action_specs.pack(actions)))
+            actions=self._action_specs.pack(actions),
+        )
+    )
+
+    if not isinstance(step_response, dm_env_rpc_pb2.StepResponse):
+      raise RuntimeError(
+          'StepRequest failed to return a valid step response, instead'
+          f' got: {step_response}'
+      )
 
     observations = self._observation_specs.unpack(step_response.observations)
 
-    if (step_response.state == dm_env_rpc_pb2.EnvironmentStateType.RUNNING and
-        self._last_state == dm_env_rpc_pb2.EnvironmentStateType.RUNNING):
+    if (
+        step_response.state == dm_env_rpc_pb2.EnvironmentStateType.RUNNING
+        and self._last_state == dm_env_rpc_pb2.EnvironmentStateType.RUNNING
+    ):
       step_type = dm_env.StepType.MID
     elif step_response.state == dm_env_rpc_pb2.EnvironmentStateType.RUNNING:
       step_type = dm_env.StepType.FIRST
@@ -190,27 +215,34 @@ class DmEnvAdaptor(dm_env.Environment):
       # Neither response.state nor _last_state is RUNNING.
       # See common causes for state transition errors:
       # https://github.com/deepmind/dm_env_rpc/blob/master/docs/v1/appendix.md#common-state-transition-errors
-      raise RuntimeError('Environment transitioned from {} to {}'.format(
-          dm_env_rpc_pb2.EnvironmentStateType.Name(self._last_state),
-          dm_env_rpc_pb2.EnvironmentStateType.Name(step_response.state)))
+      raise RuntimeError(
+          'Environment transitioned from {} to {}'.format(
+              dm_env_rpc_pb2.EnvironmentStateType.Name(self._last_state),
+              dm_env_rpc_pb2.EnvironmentStateType.Name(step_response.state),
+          )
+      )
 
     self._last_state = step_response.state
 
     reward = self.reward(
         state=step_response.state,
         step_type=step_type,
-        observations=observations)
+        observations=observations,
+    )
     discount = self.discount(
         state=step_response.state,
         step_type=step_type,
-        observations=observations)
+        observations=observations,
+    )
     if not self._is_reward_requested:
       observations.pop(DEFAULT_REWARD_KEY, None)
     if not self._is_discount_requested:
       observations.pop(DEFAULT_DISCOUNT_KEY, None)
-    observations = dm_env_flatten_utils.unflatten_dict(
-        observations,
-        DEFAULT_KEY_SEPARATOR) if self._nested_tensors else observations
+    observations = (
+        dm_env_flatten_utils.unflatten_dict(observations, DEFAULT_KEY_SEPARATOR)
+        if self._nested_tensors
+        else observations
+    )
     return dm_env.TimeStep(step_type, reward, discount, observations)
 
   def reward(self, state, step_type, observations):
@@ -256,8 +288,10 @@ class DmEnvAdaptor(dm_env.Environment):
       return observations[DEFAULT_DISCOUNT_KEY]
     if step_type == dm_env.StepType.FIRST:
       return None
-    elif (state == dm_env_rpc_pb2.EnvironmentStateType.RUNNING or
-          state == dm_env_rpc_pb2.EnvironmentStateType.INTERRUPTED):
+    elif (
+        state == dm_env_rpc_pb2.EnvironmentStateType.RUNNING
+        or state == dm_env_rpc_pb2.EnvironmentStateType.INTERRUPTED
+    ):
       return 1.0
     else:
       return 0.0
@@ -268,7 +302,8 @@ class DmEnvAdaptor(dm_env.Environment):
     for uid in self._requested_observation_uids:
       name = self._observation_specs.uid_to_name(uid)
       specs[name] = dm_env_utils.tensor_spec_to_dm_env_spec(
-          self._observation_specs.uid_to_spec(uid))
+          self._observation_specs.uid_to_spec(uid)
+      )
     if not self._is_reward_requested:
       specs.pop(DEFAULT_REWARD_KEY, None)
     if not self._is_discount_requested:
@@ -283,20 +318,19 @@ class DmEnvAdaptor(dm_env.Environment):
     """Implements dm_env.Environment.action_spec."""
     action_spec = dm_env_utils.dm_env_spec(self._action_specs)
     if self._nested_tensors:
-      return dm_env_flatten_utils.unflatten_dict(action_spec,
-                                                 DEFAULT_KEY_SEPARATOR)
+      return dm_env_flatten_utils.unflatten_dict(
+          action_spec, DEFAULT_KEY_SEPARATOR
+      )
     else:
       return action_spec
 
   def reward_spec(self):
     """Implements dm_env.Environment.reward_spec."""
-    return (self._default_reward_spec or
-            super(DmEnvAdaptor, self).reward_spec())
+    return self._default_reward_spec or super().reward_spec()
 
   def discount_spec(self):
     """Implements dm_env.Environment.discount_spec."""
-    return (self._default_discount_spec or
-            super(DmEnvAdaptor, self).discount_spec())
+    return self._default_discount_spec or super().discount_spec()
 
   def close(self):
     """Implements dm_env.Environment.close."""
@@ -309,8 +343,10 @@ class DmEnvAdaptor(dm_env.Environment):
       self._connection = None
 
 
-def create_world(connection: dm_env_rpc_connection.ConnectionType,
-                 create_world_settings: Mapping[str, Any]) -> str:
+def create_world(
+    connection: dm_env_rpc_connection.ConnectionType,
+    create_world_settings: Mapping[str, Any],
+) -> str:
   """Helper function to create a world with the provided settings.
 
   Args:
@@ -322,19 +358,32 @@ def create_world(connection: dm_env_rpc_connection.ConnectionType,
 
   Returns:
     Created world name.
+
+  Raises:
+    RuntimeError: If something went wrong creating the world.
   """
   create_world_settings = dm_env_flatten_utils.flatten_dict(
       create_world_settings, DEFAULT_KEY_SEPARATOR, strict=False
   )
 
   create_world_settings = {
-      key: (value if isinstance(value, dm_env_rpc_pb2.Tensor) else
-            tensor_utils.pack_tensor(value))
+      key: (
+          value
+          if isinstance(value, dm_env_rpc_pb2.Tensor)
+          else tensor_utils.pack_tensor(value)
+      )
       for key, value in create_world_settings.items()
   }
-  return connection.send(
-      dm_env_rpc_pb2.CreateWorldRequest(
-          settings=create_world_settings)).world_name
+  response = connection.send(
+      dm_env_rpc_pb2.CreateWorldRequest(settings=create_world_settings)
+  )
+  if not isinstance(response, dm_env_rpc_pb2.CreateWorldResponse):
+    raise RuntimeError(
+        'CreateWorld failed to return a valid create world response, instead'
+        f' got: {response}'
+    )
+
+  return response.world_name
 
 
 def join_world(
@@ -357,22 +406,35 @@ def join_world(
 
   Returns:
     Instance of DmEnvAdaptor.
+
+  Raises:
+    RuntimeError: If connection doesn't return a JoinWorldResponse.
   """
   join_world_settings = dm_env_flatten_utils.flatten_dict(
       join_world_settings, DEFAULT_KEY_SEPARATOR, strict=False
   )
 
   join_world_settings = {
-      key: (value if isinstance(value, dm_env_rpc_pb2.Tensor) else
-            tensor_utils.pack_tensor(value))
+      key: (
+          value
+          if isinstance(value, dm_env_rpc_pb2.Tensor)
+          else tensor_utils.pack_tensor(value)
+      )
       for key, value in join_world_settings.items()
   }
-  specs = connection.send(
+  response = connection.send(
       dm_env_rpc_pb2.JoinWorldRequest(
-          world_name=world_name, settings=join_world_settings)).specs
+          world_name=world_name, settings=join_world_settings
+      )
+  )
+  if not isinstance(response, dm_env_rpc_pb2.JoinWorldResponse):
+    raise RuntimeError(
+        'JoinWorld failed to return a valid join world response, instead'
+        f' got: {response}'
+    )
 
   try:
-    return DmEnvAdaptor(connection, specs, **adaptor_kwargs)
+    return DmEnvAdaptor(connection, response.specs, **adaptor_kwargs)
   except ValueError:
     connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
     raise
@@ -380,14 +442,17 @@ def join_world(
 
 class DmEnvAndWorldName(NamedTuple):
   """Environment and world_name created when calling create_and_join_world."""
+
   env: DmEnvAdaptor
   world_name: str
 
 
-def create_and_join_world(connection: dm_env_rpc_connection.ConnectionType,
-                          create_world_settings: Mapping[str, Any],
-                          join_world_settings: Mapping[str, Any],
-                          **adaptor_kwargs) -> DmEnvAndWorldName:
+def create_and_join_world(
+    connection: dm_env_rpc_connection.ConnectionType,
+    create_world_settings: Mapping[str, Any],
+    join_world_settings: Mapping[str, Any],
+    **adaptor_kwargs,
+) -> DmEnvAndWorldName:
   """Helper function to create and join a world with the provided settings.
 
   Args:
@@ -407,8 +472,11 @@ def create_and_join_world(connection: dm_env_rpc_connection.ConnectionType,
   world_name = create_world(connection, create_world_settings)
   try:
     return DmEnvAndWorldName(
-        join_world(connection, world_name, join_world_settings,
-                   **adaptor_kwargs), world_name)
+        join_world(
+            connection, world_name, join_world_settings, **adaptor_kwargs
+        ),
+        world_name,
+    )
   except (error.DmEnvRpcError, ValueError):
     connection.send(dm_env_rpc_pb2.DestroyWorldRequest(world_name=world_name))
     raise
