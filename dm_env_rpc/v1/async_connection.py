@@ -44,23 +44,35 @@ that you know how to handle.
 Any errors encountered in the EnvironmentResponse are turned into Python
 exceptions, so explicit error handling code isn't needed per call.
 """
+
 import asyncio
+from typing import Optional, Sequence, Tuple
+
 import grpc
 
 from dm_env_rpc.v1 import dm_env_rpc_pb2_grpc
 from dm_env_rpc.v1 import message_utils
 
 
+Metadata = Sequence[Tuple[str, str]]
+
+
 class AsyncConnection:
   """A helper class for interacting with dm_env_rpc servers asynchronously."""
 
-  def __init__(self, channel: grpc.aio.Channel):
+  def __init__(
+      self, channel: grpc.aio.Channel, metadata: Optional[Metadata] = None
+  ):
     """Manages an async connection to a dm_env_rpc server.
 
     Args:
       channel: An async grpc channel to connect to the dm_env_rpc server over.
+      metadata: Optional sequence of 2-tuples, sent to the gRPC server as
+        metadata.
     """
-    self._stream = dm_env_rpc_pb2_grpc.EnvironmentStub(channel).Process()
+    self._stream = dm_env_rpc_pb2_grpc.EnvironmentStub(channel).Process(
+        metadata=metadata
+    )
 
   async def send(
       self,
@@ -111,7 +123,8 @@ class AsyncConnection:
 
 async def create_secure_async_channel_and_connect(
     server_address: str,
-    credentials: grpc.ChannelCredentials = grpc.local_channel_credentials()
+    credentials: grpc.ChannelCredentials = grpc.local_channel_credentials(),
+    metadata: Optional[Metadata] = None,
 ) -> AsyncConnection:
   """Creates a secure async channel from address and credentials and connects.
 
@@ -121,6 +134,8 @@ async def create_secure_async_channel_and_connect(
   Args:
     server_address: URI server address to connect to.
     credentials: gRPC credentials necessary to connect to the server.
+    metadata: Optional sequence of 2-tuples, sent to the gRPC server as
+        metadata.
 
   Returns:
     An instance of dm_env_rpc.AsyncConnection, where the async channel is closed
@@ -135,8 +150,8 @@ async def create_secure_async_channel_and_connect(
   class _ConnectionWrapper(AsyncConnection):
     """Utility to ensure channel is closed when the connection is closed."""
 
-    def __init__(self, channel):
-      super().__init__(channel)
+    def __init__(self, channel, metadata):
+      super().__init__(channel=channel, metadata=metadata)
       self._channel = channel
 
     def __del__(self):
@@ -153,4 +168,4 @@ async def create_secure_async_channel_and_connect(
       else:
         return asyncio.run(self._channel.close())
 
-  return _ConnectionWrapper(channel)
+  return _ConnectionWrapper(channel=channel, metadata=metadata)

@@ -72,7 +72,7 @@ _REQUEST_RESPONSE_PAIRS = {
 }
 
 
-def _process() -> grpc.aio.StreamStreamCall:
+def _process(metadata: async_connection.Metadata) -> grpc.aio.StreamStreamCall:
   requests = queue.Queue()
 
   async def _write(request):
@@ -85,6 +85,7 @@ def _process() -> grpc.aio.StreamStreamCall:
   mock_stream = mock.create_autospec(grpc.aio.StreamStreamCall)
   mock_stream.write = _write
   mock_stream.read = _read
+  mock_stream.metadata = metadata
   return mock_stream
 
 
@@ -134,6 +135,17 @@ class AsyncConnectionAsyncTests(unittest.IsolatedAsyncioTestCase):
       with async_connection.AsyncConnection(mock_channel) as connection:
         with self.assertRaisesRegex(ValueError, 'Unexpected response message'):
           await connection.send(_INCORRECT_RESPONSE_TEST_MSG)
+
+  def test_with_metadata(self):
+    expected_metadata = (('key', 'value'),)
+    with mock.patch.object(async_connection,
+                           'dm_env_rpc_pb2_grpc') as mock_grpc:
+      mock_stub_class = mock.MagicMock()
+      mock_grpc.EnvironmentStub.return_value = mock_stub_class
+      _ = async_connection.AsyncConnection(
+          mock.MagicMock(), metadata=expected_metadata)
+      mock_stub_class.Process.assert_called_with(
+          metadata=expected_metadata)
 
   @mock.patch.object(grpc.aio, 'secure_channel')
   async def test_create_secure_channel_and_connect_context(
