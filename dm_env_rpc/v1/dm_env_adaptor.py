@@ -44,6 +44,15 @@ before: "{specs}"
 after: "{new_specs}"'''
 
 
+def _check_response_type(response, expected_type):
+  if not isinstance(response, expected_type):
+    raise RuntimeError(
+        f'Unexpected response type: {type(response)}, expected {expected_type}'
+    )
+  else:
+    return response
+
+
 class AutoObservations(enum.Flag):
   """Options for requesting all available observations."""
 
@@ -161,13 +170,10 @@ class DmEnvAdaptor(dm_env.Environment):
     """Implements dm_env.Environment.reset."""
     if self._connection is None:
       raise ValueError('Cannot reset environment after connection is closed.')
-    reset_response = self._connection.send(dm_env_rpc_pb2.ResetRequest())
-
-    if not isinstance(reset_response, dm_env_rpc_pb2.ResetResponse):
-      raise RuntimeError(
-          'ResetRequest failed to return a valid reset response, instead'
-          f' got: {reset_response}'
-      )
+    reset_response = _check_response_type(
+        self._connection.send(dm_env_rpc_pb2.ResetRequest()),
+        dm_env_rpc_pb2.ResetResponse,
+    )
 
     if self._dm_env_rpc_specs != reset_response.specs:
       raise RuntimeError(
@@ -187,18 +193,15 @@ class DmEnvAdaptor(dm_env.Environment):
     )
     if self._connection is None:
       raise ValueError('Cannot step environment, connection is closed.')
-    step_response = self._connection.send(
-        dm_env_rpc_pb2.StepRequest(
-            requested_observations=self._requested_observation_uids,
-            actions=self._action_specs.pack(actions),
-        )
+    step_response = _check_response_type(
+        self._connection.send(
+            dm_env_rpc_pb2.StepRequest(
+                requested_observations=self._requested_observation_uids,
+                actions=self._action_specs.pack(actions),
+            )
+        ),
+        dm_env_rpc_pb2.StepResponse,
     )
-
-    if not isinstance(step_response, dm_env_rpc_pb2.StepResponse):
-      raise RuntimeError(
-          'StepRequest failed to return a valid step response, instead'
-          f' got: {step_response}'
-      )
 
     observations = self._observation_specs.unpack(step_response.observations)
 
@@ -374,14 +377,12 @@ def create_world(
       )
       for key, value in create_world_settings.items()
   }
-  response = connection.send(
-      dm_env_rpc_pb2.CreateWorldRequest(settings=create_world_settings)
+  response = _check_response_type(
+      connection.send(
+          dm_env_rpc_pb2.CreateWorldRequest(settings=create_world_settings)
+      ),
+      dm_env_rpc_pb2.CreateWorldResponse,
   )
-  if not isinstance(response, dm_env_rpc_pb2.CreateWorldResponse):
-    raise RuntimeError(
-        'CreateWorld failed to return a valid create world response, instead'
-        f' got: {response}'
-    )
 
   return response.world_name
 
@@ -422,16 +423,14 @@ def join_world(
       )
       for key, value in join_world_settings.items()
   }
-  response = connection.send(
-      dm_env_rpc_pb2.JoinWorldRequest(
-          world_name=world_name, settings=join_world_settings
-      )
+  response = _check_response_type(
+      connection.send(
+          dm_env_rpc_pb2.JoinWorldRequest(
+              world_name=world_name, settings=join_world_settings
+          )
+      ),
+      dm_env_rpc_pb2.JoinWorldResponse,
   )
-  if not isinstance(response, dm_env_rpc_pb2.JoinWorldResponse):
-    raise RuntimeError(
-        'JoinWorld failed to return a valid join world response, instead'
-        f' got: {response}'
-    )
 
   try:
     return DmEnvAdaptor(connection, response.specs, **adaptor_kwargs)

@@ -337,6 +337,13 @@ class DmEnvAdaptorTests(absltest.TestCase):
     )
     self.assertIsNone(self._env._connection)
 
+  def test_invalid_response_raises_error(self):
+    self._connection.send = mock.MagicMock(
+        return_value=dm_env_rpc_pb2.ResetResponse()
+    )
+    with self.assertRaisesRegex(RuntimeError, 'Unexpected response type'):
+      self._env.step({})
+
 
 class OverrideRewardDiscount(dm_env_adaptor.DmEnvAdaptor):
 
