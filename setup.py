@@ -120,14 +120,14 @@ setup(
         'immutabledict',
         'googleapis-common-protos',
         'grpcio',
-        'numpy',
+        'numpy<2.0',
         'protobuf>=3.8',
     ],
     tests_require=[
         'absl-py',
         'nose',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     setup_requires=['grpcio-tools', 'importlib_resources'],
     extras_require={
         'examples': ['pygame'],
