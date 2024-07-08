@@ -79,6 +79,20 @@ To cite this repository:
 }
 ```
 
+## Developer Notes
+
+In order to run the included unit tests, developers must also install additional
+dependencies defined in `requirements.txt`, at which point the tests should be
+runnable via `pytest`. For example:
+
+```bash
+$ git clone --recursive https://github.com/deepmind/dm_env_rpc.git
+$ pip install -U pip wheel
+$ pip install -e ./dm_env_rpc
+$ pip install -r ./dm_env_rpc/requirements.txt
+$ pytest ./dm_env_rpc
+```
+
 ## Notice
 
 This is not an officially supported Google product

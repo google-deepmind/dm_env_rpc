@@ -123,10 +123,6 @@ setup(
         'numpy<2.0',
         'protobuf>=3.8',
     ],
-    tests_require=[
-        'absl-py',
-        'nose',
-    ],
     python_requires='>=3.8',
     setup_requires=['grpcio-tools', 'importlib_resources'],
     extras_require={
@@ -137,7 +133,6 @@ setup(
         'build_py': _BuildPy,
         'generate_protos': _GenerateProtoFiles,
     },
-    test_suite='nose.collector',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',

@@ -169,7 +169,7 @@ The client cannot send errors to the server. If the client has an error that it
 can’t recover from, it should just close the connection (gracefully, if
 possible).
 
-Since a server can _only_ send messages in response to a given
+Since a server can *only* send messages in response to a given
 `EnvironmentRequest`, the errors should ideally be focused on problems from a
 specific client request. More general issues or warnings from a given server
 implementation should be logged through a separate mechanism.

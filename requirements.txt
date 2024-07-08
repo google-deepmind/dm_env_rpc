@@ -1,0 +1,5 @@
+# Requirements necessary to run dm_env_rpc tests.
+# Please install other requirements via pip install.
+
+absl-py==2.1.0
+pytest==8.2.2
