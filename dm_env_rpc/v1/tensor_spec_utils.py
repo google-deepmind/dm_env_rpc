@@ -35,9 +35,13 @@ class Bounds(Generic[T]):
   max: T
 
 
-def _can_cast(array_or_scalar, np_dtype: np.dtype) -> bool:
+def _is_valid_bound(array_or_scalar, np_dtype: np.dtype) -> bool:
+  array_or_scalar = np.asarray(array_or_scalar)
+  if not np.issubdtype(array_or_scalar.dtype, np.integer):
+    return True
+  iinfo = np.iinfo(np_dtype)
   for value in np.asarray(array_or_scalar).flat:
-    if not np.can_cast(value, np_dtype, casting='safe'):
+    if int(value) < iinfo.min or int(value) > iinfo.max:
       return False
   return True
 
@@ -121,7 +125,9 @@ def bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec) -> Bounds:
   min_bound = _get_value(tensor_spec.min, tensor_spec.shape, dtype_bounds.min)
   max_bound = _get_value(tensor_spec.max, tensor_spec.shape, dtype_bounds.max)
 
-  if not _can_cast(min_bound, np_type) or not _can_cast(max_bound, np_type):
+  if not _is_valid_bound(min_bound, np_type) or not _is_valid_bound(
+      max_bound, np_type
+  ):
     raise ValueError(
         _BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE.format(
             name=tensor_spec.name,
@@ -158,8 +164,8 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
   has_min = minimum is not None
   has_max = maximum is not None
 
-  if ((has_min and not _can_cast(minimum, np_type)) or
-      (has_max and not _can_cast(maximum, np_type))):
+  if ((has_min and not _is_valid_bound(minimum, np_type)) or
+      (has_max and not _is_valid_bound(maximum, np_type))):
     raise ValueError(
         _BOUNDS_CANNOT_BE_SAFELY_CAST_TO_DTYPE.format(
             name=tensor_spec.name,
