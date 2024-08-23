@@ -330,12 +330,23 @@ class SetBoundsTests(parameterized.TestCase):
       tensor_spec_utils.set_bounds(tensor_spec, minimum=[0, 4], maximum=[1, 1])
 
   @parameterized.parameters([
-      dict(minimum=[-1000], maximum=[1]),
-      dict(minimum=[1], maximum=[1000]),
+      dict(minimum=[-1000], maximum=[1], dtype=dm_env_rpc_pb2.DataType.INT8),
+      dict(minimum=[1], maximum=[1000], dtype=dm_env_rpc_pb2.DataType.INT8),
+      dict(
+          minimum=[-1.7976931348623157e308],
+          maximum=[1.0],
+          dtype=dm_env_rpc_pb2.DataType.FLOAT,
+      ),
+      dict(
+          minimum=[1.0],
+          maximum=[1.7976931348623157e308],
+          dtype=dm_env_rpc_pb2.DataType.FLOAT,
+      ),
   ])
-  def test_new_bounds_must_be_safely_castable_to_dtype(self, minimum, maximum):
+  def test_new_bounds_must_be_safely_castable_to_dtype(
+      self, minimum, maximum, dtype
+  ):
     name = 'test'
-    dtype = dm_env_rpc_pb2.DataType.INT8
     tensor_spec = dm_env_rpc_pb2.TensorSpec(name=name, dtype=dtype)
     with self.assertRaisesWithLiteralMatch(
         ValueError,
@@ -346,6 +357,7 @@ class SetBoundsTests(parameterized.TestCase):
             dtype=dm_env_rpc_pb2.DataType.Name(dtype))):
       tensor_spec_utils.set_bounds(
           tensor_spec, minimum=minimum, maximum=maximum)
+
 
 if __name__ == '__main__':
   absltest.main()

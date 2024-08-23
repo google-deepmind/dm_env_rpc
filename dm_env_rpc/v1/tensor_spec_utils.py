@@ -36,13 +36,20 @@ class Bounds(Generic[T]):
 
 
 def _is_valid_bound(array_or_scalar, np_dtype: np.dtype) -> bool:
+  """Returns whether array_or_scalar is a valid bound for the given type."""
   array_or_scalar = np.asarray(array_or_scalar)
-  if not np.issubdtype(array_or_scalar.dtype, np.integer):
-    return True
-  iinfo = np.iinfo(np_dtype)
-  for value in np.asarray(array_or_scalar).flat:
-    if int(value) < iinfo.min or int(value) > iinfo.max:
-      return False
+  if np.issubdtype(array_or_scalar.dtype, np.integer):
+    iinfo = np.iinfo(np_dtype)
+    for value in np.asarray(array_or_scalar).flat:
+      if int(value) < iinfo.min or int(value) > iinfo.max:
+        return False
+  elif np.issubdtype(array_or_scalar.dtype, np.floating):
+    finfo = np.finfo(np_dtype)
+    for value in np.asarray(array_or_scalar).flat:
+      if (float(value) < finfo.min and float(value) != -np.inf) or (
+          float(value) > finfo.max and float(value) != np.inf
+      ):
+        return False
   return True
 
 
