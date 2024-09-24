@@ -322,7 +322,7 @@ def pack_tensor(
     value = value.astype(
         dtype=_DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype),
         copy=False,
-        casting='same_kind' if value.size else 'unsafe')
+        casting='unsafe')
 
   packed.shape[:] = value.shape
   packer = get_packer(value.dtype.type)

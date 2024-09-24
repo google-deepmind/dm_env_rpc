@@ -102,12 +102,8 @@ class SpecManagerTests(absltest.TestCase):
       self._spec_manager.pack({'foo': [1, 2]})
 
   def test_pack_wrong_dtype_raises_error(self):
-    with self.assertRaisesRegex(TypeError, 'int32'):
+    with self.assertRaises(ValueError):
       self._spec_manager.pack({'foo': 'hello'})
-
-  def test_pack_cast_float_to_int_raises_error(self):
-    with self.assertRaisesRegex(TypeError, 'int32'):
-      self._spec_manager.pack({'foo': [0.5, 1.0, 1]})
 
   def test_pack_cast_int_to_float_is_ok(self):
     packed = self._spec_manager.pack({'fuzz': [1, 2]})

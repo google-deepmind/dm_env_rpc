@@ -168,7 +168,7 @@ class PackTensorTests(parameterized.TestCase):
     np.testing.assert_array_equal([1, 2, 3, 4, 5, 6], tensor.int32s.array)
 
   def test_mixed_scalar_types_raises_exception(self):
-    with self.assertRaises(TypeError):
+    with self.assertRaises(ValueError):
       tensor_utils.pack_tensor(['hello!', 75], dtype=np.float32)
 
   def test_jagged_arrays_throw_exceptions(self):
