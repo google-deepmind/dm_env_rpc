@@ -137,8 +137,8 @@ def _action_spec():
       dtype=dm_env_rpc_pb2.INT8, name=_ACTION_PADDLE)
   tensor_spec_utils.set_bounds(
       paddle_action_spec,
-      minimum=np.min(_VALID_ACTIONS),
-      maximum=np.max(_VALID_ACTIONS))
+      minimum=np.int8(np.min(_VALID_ACTIONS)),
+      maximum=np.int8(np.max(_VALID_ACTIONS)))
   return {1: paddle_action_spec}
 
 
