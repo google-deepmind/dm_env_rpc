@@ -53,7 +53,7 @@ def _is_valid_bound(array_or_scalar, np_dtype: np.dtype) -> bool:
   return True
 
 
-def np_range_info(np_type: ...) -> Union[np.finfo, np.iinfo]:
+def np_range_info(np_type) -> Union[np.finfo, np.iinfo]:
   """Returns type info for `np_type`, which includes min and max attributes."""
   np_type = np.dtype(np_type)
   if issubclass(np_type.type, np.floating):
