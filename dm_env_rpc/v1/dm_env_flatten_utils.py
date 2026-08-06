@@ -83,12 +83,12 @@ def unflatten_dict(input_dict: Mapping[str, Any],
     sub_keys = key.split(separator)
     sub_tree = result
     for sub_key in sub_keys[:-1]:
-      sub_tree = sub_tree.setdefault(sub_key, {})
+      sub_tree = sub_tree.setdefault(sub_key, {})  # pyrefly: ignore[missing-attribute]
       if not isinstance(sub_tree, Mapping):
         raise ValueError(f"Sub-tree '{sub_key}' has already been assigned a "
                          f"leaf value {sub_tree}")
 
     if sub_keys[-1] in sub_tree:
       raise ValueError(f'Duplicate key {key}')
-    sub_tree[sub_keys[-1]] = value
+    sub_tree[sub_keys[-1]] = value  # pyrefly: ignore[unsupported-operation]
   return result
