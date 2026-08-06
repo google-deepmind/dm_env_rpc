@@ -194,17 +194,17 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
           f'maximum has shape {maximum.shape}, which is incompatible with '
           f"tensor_spec {tensor_spec.name}'s shape {tensor_spec.shape}.")
 
-  if (has_min and has_max and np.any(maximum < minimum)):
+  if (has_min and has_max and np.any(maximum < minimum)):  # pyrefly: ignore[unsupported-operation]
     raise ValueError('TensorSpec "{}" has min {} larger than max {}.'.format(
         tensor_spec.name, minimum, maximum))
 
   packer = tensor_utils.get_packer(np_type)
   if has_min:
-    packer.pack(tensor_spec.min, minimum)
+    packer.pack(tensor_spec.min, minimum)  # pyrefly: ignore[bad-argument-type]
   else:
     tensor_spec.ClearField('min')
 
   if has_max:
-    packer.pack(tensor_spec.max, maximum)
+    packer.pack(tensor_spec.max, maximum)  # pyrefly: ignore[bad-argument-type]
   else:
     tensor_spec.ClearField('max')

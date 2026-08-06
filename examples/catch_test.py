@@ -60,11 +60,11 @@ class JoinedServerConnection(ServerConnection):
   def __init__(self):
     super().__init__()
     response = self.connection.send(dm_env_rpc_pb2.CreateWorldRequest())
-    self.world_name = response.world_name
+    self.world_name = response.world_name  # pyrefly: ignore[missing-attribute]
 
     response = self.connection.send(dm_env_rpc_pb2.JoinWorldRequest(
         world_name=self.world_name))
-    self.specs = response.specs
+    self.specs = response.specs  # pyrefly: ignore[missing-attribute]
 
   def close(self):
     try:
@@ -200,7 +200,7 @@ class CatchDmEnvTest(test_utils.EnvironmentTestMixin, absltest.TestCase):
     super().tearDown()
     self._server_connection.close()
 
-  def make_object_under_test(self):
+  def make_object_under_test(self):  # pyrefly: ignore[bad-override]
     return self._dm_env
 
 
@@ -224,7 +224,7 @@ class CatchTestSettings(absltest.TestCase):
     super().tearDown()
 
   def test_reset_world_seed_setting(self):
-    self._world_name = self._connection.send(
+    self._world_name = self._connection.send(  # pyrefly: ignore[missing-attribute]
         dm_env_rpc_pb2.CreateWorldRequest(
             settings={'seed': tensor_utils.pack_tensor(1234)})).world_name
     self._connection.send(
@@ -239,7 +239,7 @@ class CatchTestSettings(absltest.TestCase):
                      self._connection.send(dm_env_rpc_pb2.StepRequest()))
 
   def test_reset_seed_setting(self):
-    self._world_name = self._connection.send(
+    self._world_name = self._connection.send(  # pyrefly: ignore[missing-attribute]
         dm_env_rpc_pb2.CreateWorldRequest(
             settings={'seed': tensor_utils.pack_tensor(1234)})).world_name
     self._connection.send(
@@ -262,7 +262,7 @@ class CatchTest(absltest.TestCase):
     self._connection = self._server_connection.connection
 
     response = self._connection.send(dm_env_rpc_pb2.CreateWorldRequest())
-    self._world_name = response.world_name
+    self._world_name = response.world_name  # pyrefly: ignore[missing-attribute]
 
   def tearDown(self):
     try:

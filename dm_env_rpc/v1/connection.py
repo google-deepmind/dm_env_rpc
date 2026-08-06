@@ -139,7 +139,7 @@ class Connection(object):
   def close(self):
     """Closes the connection.  Call when the connection is no longer needed."""
     if self._stream:
-      self._stream = None
+      self._stream = None  # pyrefly: ignore[bad-assignment]
 
   def __exit__(self, *args, **kwargs):
     self.close()

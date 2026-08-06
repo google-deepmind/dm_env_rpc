@@ -362,15 +362,15 @@ class RewardDiscountOverrideTests(absltest.TestCase):
     env.connection.send.return_value = _SAMPLE_STEP_RESPONSE
     timestep = env.step({})
     self.assertEqual(0.5, timestep.reward)
-    env.reward.assert_called()
+    env.reward.assert_called()  # pyrefly: ignore[missing-attribute]
     self.assertEqual(dm_env_rpc_pb2.EnvironmentStateType.RUNNING,
-                     env.reward.call_args[1]['state'])
+                     env.reward.call_args[1]['state'])  # pyrefly: ignore[missing-attribute]
     self.assertEqual(dm_env.StepType.FIRST,
-                     env.reward.call_args[1]['step_type'])
+                     env.reward.call_args[1]['step_type'])  # pyrefly: ignore[missing-attribute]
     self.assertDictEqual({
         'foo': 5,
         'bar': 'goodbye'
-    }, env.reward.call_args[1]['observations'])
+    }, env.reward.call_args[1]['observations'])  # pyrefly: ignore[missing-attribute]
 
   def test_override_discount(self):
     env = OverrideRewardDiscount()
@@ -378,15 +378,15 @@ class RewardDiscountOverrideTests(absltest.TestCase):
     env.connection.send.return_value = _SAMPLE_STEP_RESPONSE
     timestep = env.step({})
     self.assertEqual(0.5, timestep.discount)
-    env.discount.assert_called()
+    env.discount.assert_called()  # pyrefly: ignore[missing-attribute]
     self.assertEqual(dm_env_rpc_pb2.EnvironmentStateType.RUNNING,
-                     env.discount.call_args[1]['state'])
+                     env.discount.call_args[1]['state'])  # pyrefly: ignore[missing-attribute]
     self.assertEqual(dm_env.StepType.FIRST,
-                     env.discount.call_args[1]['step_type'])
+                     env.discount.call_args[1]['step_type'])  # pyrefly: ignore[missing-attribute]
     self.assertDictEqual({
         'foo': 5,
         'bar': 'goodbye'
-    }, env.discount.call_args[1]['observations'])
+    }, env.discount.call_args[1]['observations'])  # pyrefly: ignore[missing-attribute]
 
 
 class ReservedKeywordTests(absltest.TestCase):
@@ -622,7 +622,7 @@ class EnvironmentNestedActionsObservations(absltest.TestCase):
         specs=_SAMPLE_SPEC,
         extensions={'extension': _ExampleExtension()})
 
-    self.assertEqual('bar', env.extension.foo())
+    self.assertEqual('bar', env.extension.foo())  # pyrefly: ignore[missing-attribute]
 
   def test_invalid_extension_attr(self):
     with self.assertRaisesRegex(ValueError,
@@ -801,7 +801,7 @@ class CreateJoinHelpers(parameterized.TestCase):
         create_world_settings={},
         join_world_settings={},
         extensions={'extension': _ExampleExtension()})
-    self.assertEqual('bar', env.extension.foo())
+    self.assertEqual('bar', env.extension.foo())  # pyrefly: ignore[missing-attribute]
 
   def test_create_join_world_with_unnested_tensors(self):
     connection = mock.MagicMock()

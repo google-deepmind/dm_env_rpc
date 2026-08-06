@@ -250,7 +250,7 @@ def unpack_proto(proto: TensorOrTensorSpecValue) -> np.ndarray:
   Returns:
     Returns a NumPy array of the payload with the correct type.
   """
-  np_type = get_tensor_type(proto)
+  np_type = get_tensor_type(proto)  # pyrefly: ignore[bad-argument-type]
   packer = get_packer(np_type)
   return packer.unpack(proto)
 
@@ -308,7 +308,7 @@ def pack_tensor(
     # of objects and a string dtype argument, automatically convert the value to
     # an array of strings.
     if np.issubdtype(
-        _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype), np.str_):
+        _DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype), np.str_):  # pyrefly: ignore[no-matching-overload]
       for item in value.flat:
         if not isinstance(item, str):
           raise TypeError(f'Requested string dtype but not all elements are '
@@ -320,7 +320,7 @@ def pack_tensor(
     # NumPy defaults to np.float64 dtype when calling np.asarray() on an empty
     # array. Allow unsafe casting in this particular case.
     value = value.astype(
-        dtype=_DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype),
+        dtype=_DM_ENV_RPC_DTYPE_TO_NUMPY_DTYPE.get(dtype, dtype),  # pyrefly: ignore[no-matching-overload]
         copy=False,
         casting='unsafe')
 

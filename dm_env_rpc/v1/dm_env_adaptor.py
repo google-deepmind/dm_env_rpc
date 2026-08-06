@@ -119,14 +119,14 @@ class DmEnvAdaptor(dm_env.Environment):
       self._is_discount_requested = (
           AutoObservations.REQUEST_DISCOUNT in requested_observations
       )
-      requested_observations = self._observation_specs.names()
+      requested_observations = self._observation_specs.names()  # pyrefly: ignore[bad-assignment]
     else:
       self._is_reward_requested = DEFAULT_REWARD_KEY in requested_observations
       self._is_discount_requested = (
           DEFAULT_DISCOUNT_KEY in requested_observations
       )
 
-    requested_observations = set(requested_observations)
+    requested_observations = set(requested_observations)  # pyrefly: ignore[bad-argument-type, bad-assignment]
 
     self._default_reward_spec = None
     self._default_discount_spec = None
@@ -134,14 +134,14 @@ class DmEnvAdaptor(dm_env.Environment):
       self._default_reward_spec = dm_env_utils.tensor_spec_to_dm_env_spec(
           self._observation_specs.name_to_spec(DEFAULT_REWARD_KEY)
       )
-      requested_observations.add(DEFAULT_REWARD_KEY)
+      requested_observations.add(DEFAULT_REWARD_KEY)  # pyrefly: ignore[missing-attribute]
     if DEFAULT_DISCOUNT_KEY in self._observation_specs.names():
       self._default_discount_spec = dm_env_utils.tensor_spec_to_dm_env_spec(
           self._observation_specs.name_to_spec(DEFAULT_DISCOUNT_KEY)
       )
-      requested_observations.add(DEFAULT_DISCOUNT_KEY)
+      requested_observations.add(DEFAULT_DISCOUNT_KEY)  # pyrefly: ignore[missing-attribute]
 
-    unsupported_observations = requested_observations.difference(
+    unsupported_observations = requested_observations.difference(  # pyrefly: ignore[missing-attribute]
         self._observation_specs.names()
     )
     if unsupported_observations:
@@ -151,8 +151,8 @@ class DmEnvAdaptor(dm_env.Environment):
           )
       )
     self._requested_observation_uids = [
-        self._observation_specs.name_to_uid(name)
-        for name in requested_observations
+        self._observation_specs.name_to_uid(name)  # pyrefly: ignore[bad-argument-type]
+        for name in requested_observations  # pyrefly: ignore[not-iterable]
     ]
 
     # Not strictly necessary but it makes the unit tests deterministic.
@@ -343,7 +343,7 @@ class DmEnvAdaptor(dm_env.Environment):
     # Leaves the world if we were joined.  If not, this will be a no-op anyway.
     if self._connection is not None:
       self._connection.send(dm_env_rpc_pb2.LeaveWorldRequest())
-      self._connection = None
+      self._connection = None  # pyrefly: ignore[bad-assignment]
 
 
 def create_world(

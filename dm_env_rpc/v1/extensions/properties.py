@@ -162,7 +162,7 @@ class PropertiesExtension(object):
         properties_pb2.PropertyRequest(
             read_property=properties_pb2.ReadPropertyRequest(key=key)))
     with _convert_dm_env_rpc_error():
-      self._connection.send(packed_request).Unpack(response)
+      self._connection.send(packed_request).Unpack(response)  # pyrefly: ignore[missing-attribute]
 
     return tensor_utils.unpack_tensor(response.read_property.value)
 
@@ -198,7 +198,7 @@ class PropertiesExtension(object):
         properties_pb2.PropertyRequest(
             list_property=properties_pb2.ListPropertyRequest(key=key)))
     with _convert_dm_env_rpc_error():
-      self._connection.send(packed_request).Unpack(response)
+      self._connection.send(packed_request).Unpack(response)  # pyrefly: ignore[missing-attribute]
 
     return tuple(
         PropertySpec(sub_property)
