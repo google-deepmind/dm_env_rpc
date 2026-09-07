@@ -230,7 +230,7 @@ def reshape_array(array: np.ndarray, shape):
     if len(array) == 1:
       array = np.full(np.maximum(shape, 1), array[0])
     else:
-      array.shape = shape
+      array = np.reshape(array, shape)
     return array
   else:
     length = len(array)
