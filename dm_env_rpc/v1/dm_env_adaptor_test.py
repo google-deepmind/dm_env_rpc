@@ -358,7 +358,7 @@ class RewardDiscountOverrideTests(absltest.TestCase):
 
   def test_override_reward(self):
     env = OverrideRewardDiscount()
-    env.reward.return_value = 0.5
+    env.reward.return_value = 0.5  # pyrefly: ignore[missing-attribute]
     env.connection.send.return_value = _SAMPLE_STEP_RESPONSE
     timestep = env.step({})
     self.assertEqual(0.5, timestep.reward)
@@ -374,7 +374,7 @@ class RewardDiscountOverrideTests(absltest.TestCase):
 
   def test_override_discount(self):
     env = OverrideRewardDiscount()
-    env.discount.return_value = 0.5
+    env.discount.return_value = 0.5  # pyrefly: ignore[missing-attribute]
     env.connection.send.return_value = _SAMPLE_STEP_RESPONSE
     timestep = env.step({})
     self.assertEqual(0.5, timestep.discount)
