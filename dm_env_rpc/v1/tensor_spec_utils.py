@@ -199,12 +199,10 @@ def set_bounds(tensor_spec: dm_env_rpc_pb2.TensorSpec, minimum, maximum):
         tensor_spec.name, minimum, maximum))
 
   packer = tensor_utils.get_packer(np_type)
+  tensor_spec.ClearField('min')
   if has_min:
     packer.pack(tensor_spec.min, minimum)
-  else:
-    tensor_spec.ClearField('min')
 
+  tensor_spec.ClearField('max')
   if has_max:
     packer.pack(tensor_spec.max, maximum)
-  else:
-    tensor_spec.ClearField('max')
