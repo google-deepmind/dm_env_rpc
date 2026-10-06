@@ -249,7 +249,7 @@ class DmEnvAdaptorTests(absltest.TestCase):
             requested_observations=[1, 2],
             actions={
                 1: tensor_utils.pack_tensor(actions['foo']),
-                2: tensor_utils.pack_tensor(actions['bar'], dtype=str)  # pytype: disable=wrong-arg-types  # typed-numpy
+                2: tensor_utils.pack_tensor(actions['bar'], dtype=str)  # pyrefly: ignore[bad-argument-type]
             }))
 
   def test_reset_changes_spec_raises_error(self):

@@ -31,7 +31,7 @@ class TensorTests(absltest.TestCase):
   def test_setting_tensor_data_with_wrong_type(self):
     tensor = dm_env_rpc_pb2.Tensor()
     with self.assertRaises(TypeError):
-      tensor.floats.array[:] = ['hello!']  # pytype: disable=unsupported-operands
+      tensor.floats.array[:] = ['hello!']  # pyrefly: ignore[unsupported-operation]
 
   def test_which_is_set(self):
     tensor = dm_env_rpc_pb2.Tensor()
