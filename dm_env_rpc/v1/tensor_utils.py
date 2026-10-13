@@ -78,7 +78,7 @@ class _RepeatedFieldPacker(Packer):
 
   def pack(self, proto: TensorOrTensorSpecValue, value: np.ndarray):
     payload = getattr(proto, self._name)
-    payload.array.extend(value.ravel().tolist())
+    payload.array[:] = value.ravel()
 
   def unpack(self, proto: TensorOrTensorSpecValue) -> np.ndarray:
     payload = getattr(proto, self._name)
@@ -102,7 +102,8 @@ class _RepeatedStringFieldPacker(Packer):
 
   def pack(self, proto: TensorOrTensorSpecValue, value: np.ndarray):
     payload = getattr(proto, self.name)
-    payload.array.extend(value.ravel().tolist())
+    del payload.array[:]
+    payload.array.extend(value.ravel())
 
   def unpack(self, proto: TensorOrTensorSpecValue) -> np.ndarray:
     # String arrays with variable length strings can't be created with
@@ -116,8 +117,10 @@ class _RepeatedProtoFieldPacker(Packer):
 
   def pack(self, proto: TensorOrTensorSpecValue, value: np.ndarray):
     payload = getattr(proto, self.name)
+    del payload.array[:]
     payload.array.extend(
-        [_pack_any_proto(sub_value) for sub_value in value.ravel()])
+        [_pack_any_proto(sub_value) for sub_value in value.ravel()]
+    )
 
   def unpack(self, proto: TensorOrTensorSpecValue) -> np.ndarray:
     payload = getattr(proto, self._name)
